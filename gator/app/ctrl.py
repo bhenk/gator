@@ -5,6 +5,7 @@ import logging.handlers
 import os
 import sys
 
+import gwid.logs
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMessageBox
@@ -60,7 +61,7 @@ class Ctrl(QObject):
 
         self.config = GatorConf(self.configuration_file)
         self.config.set_log_file(os.path.join(log_dir, "gator.log"))
-        util.switch_logging(self.config.log_file())
+        gwid.logs.switch_logging(self.config.log_file())
         self.sgn_switch_configuration.emit()
         LOG.info("Switched configuration : %s" % self.configuration_file)
         LOG.info("Gator Home             : %s" % self.gator_home)

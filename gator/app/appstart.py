@@ -5,7 +5,6 @@ import os
 import sys
 
 from core.configuration import PathFinder, GatorConf
-from gwid import util
 
 CONFIGURATION_DIR = "conf"
 LOGGING_CFG_FILE = "logging.conf"
@@ -13,8 +12,14 @@ LOGGING_CFG_FILE = "logging.conf"
 
 if __name__ == '__main__':
 
+    if getattr(sys, 'frozen', False):
+        # running in a bundle
+        application_home = sys._MEIPASS
+    else:
+        application_home = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
     # Start this module from anywhere on the system: append root directory of project.
-    sys.path.append(util.application_home())
+    sys.path.append(application_home)
 
     # Find out some initial paths
     path_finder = PathFinder()
@@ -28,7 +33,7 @@ if __name__ == '__main__':
     # For Windows single backslash path names:
     log_file = log_file.replace("\\", "\\\\")
     # configure logging
-    log_conf = os.path.join(util.application_home(), CONFIGURATION_DIR, LOGGING_CFG_FILE)
+    log_conf = os.path.join(application_home, CONFIGURATION_DIR, LOGGING_CFG_FILE)
     logging.config.fileConfig(log_conf, defaults={"log_file": log_file})
     # create a logger
     logger = logging.getLogger(__name__)
