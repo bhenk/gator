@@ -9,5 +9,5 @@ from gwid import util
 class TestUtil(unittest.TestCase):
 
     def test_get_icon(self):
-        icon = util.icon(util.ICON_ARROW_DOWN)
+        icon = util.ICON_ARROW_DOWN
         self.assertIsInstance(icon, QIcon)

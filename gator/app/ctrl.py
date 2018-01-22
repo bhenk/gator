@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 import logging
 import os
-
 import sys
+
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMessageBox

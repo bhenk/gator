@@ -6,10 +6,10 @@ import subprocess
 
 import exifread
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QPixmap, QKeyEvent, QIcon, QCloseEvent, QMouseEvent
+from PyQt5.QtGui import QPixmap, QKeyEvent, QCloseEvent, QMouseEvent
 from PyQt5.QtWidgets import QLabel, QApplication, QWidget, QVBoxLayout, QCheckBox, QGridLayout, QPushButton, \
-    QHBoxLayout, QLayout, QMenu, QAction, QTextBrowser
-from app.widgets import BrowserWindow, AboutWidget
+    QHBoxLayout, QLayout, QMenu, QAction
+from app.widgets import BrowserWindow
 from core.navigator import Navigator
 
 MAX_SIZE = 16777215

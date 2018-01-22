@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from PyQt5.QtWidgets import QFrame, QApplication, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton
+from PyQt5.QtWidgets import QFrame, QApplication, QVBoxLayout, QGridLayout, QPushButton
 from app.widgets import AboutWidget
 
 LOG = logging.getLogger(__name__)

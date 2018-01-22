@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import logging.config
 import os
-
 import sys
 
 from core.configuration import PathFinder, GatorConf
