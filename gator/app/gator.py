@@ -8,6 +8,7 @@ from app.ctrl import Ctrl
 from app.gframe import GFrame
 from app.tconfig import ConfigureFrame
 from app.tview import ViewFrame
+from gwid import util
 
 LOG = logging.getLogger(__name__)
 
@@ -15,11 +16,11 @@ LOG = logging.getLogger(__name__)
 # ################################################################
 class Gator(QApplication):
 
-    def __init__(self, *args, application_home=None, gator_config=None):
+    def __init__(self, *args, gator_config=None):
         QApplication.__init__(self, *args)
-        self.ctrl = Ctrl(application_home, gator_config)
+        self.ctrl = Ctrl(gator_config)
 
-        LOG.info("Start Gator. application_home: %s" % self.ctrl.application_home)
+        LOG.info("Gator started. application_home: %s" % util.application_home())
 
         self.main_window = WMain()
         self.aboutToQuit.connect(self.__before_close__)
@@ -27,7 +28,7 @@ class Gator(QApplication):
     def __before_close__(self):
         LOG.info("Closing Gator")
         self.main_window.close()
-        LOG.info("Closed Gator")
+        LOG.info("Gator closed")
 
 
 # ################################################################

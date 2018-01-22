@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 import logging
+import logging.handlers
 import os
 import sys
 
@@ -8,6 +9,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMessageBox
 from core.configuration import GatorConf, PathFinder
+from gwid import util
 
 LOG = logging.getLogger(__name__)
 
@@ -17,9 +19,8 @@ class Ctrl(QObject):
     sgn_main_window_closing = pyqtSignal()
     sgn_switch_configuration = pyqtSignal()
 
-    def __init__(self, application_home, gator_config: GatorConf):
+    def __init__(self, gator_config: GatorConf):
         QObject.__init__(self)
-        self.application_home = application_home
         self.path_finder = PathFinder()
         self.config = gator_config
         self.configuration_file = self.config.config_file
@@ -34,10 +35,10 @@ class Ctrl(QObject):
         self.sgn_main_window_closing.emit()
 
     def abs_path(self, filename):
-        return os.path.join(self.application_home, filename)
+        return os.path.join(util.application_home(), filename)
 
     def img_path(self, filename):
-        return os.path.join(self.application_home, "conf", "img", filename)
+        return os.path.join(util.application_home(), "conf", "img", filename)
 
     def icon(self, filename):
         return QIcon(self.img_path(filename))
@@ -59,32 +60,10 @@ class Ctrl(QObject):
 
         self.config = GatorConf(self.configuration_file)
         self.config.set_log_file(os.path.join(log_dir, "gator.log"))
-        self.switch_logging()
+        util.switch_logging(self.config.log_file())
         self.sgn_switch_configuration.emit()
         LOG.info("Switched configuration : %s" % self.configuration_file)
         LOG.info("Gator Home             : %s" % self.gator_home)
-
-    def switch_logging(self):
-        file_handler = logging.FileHandler(self.config.log_file())
-        log = logging.getLogger()  # root logger
-        formatter = logging.Formatter("%(asctime)s - %(levelname)-8s %(message)s [%(filename)s:%(lineno)d]")
-        file_handler.setFormatter(formatter)
-
-        stdout_handler = logging.StreamHandler(stream=sys.stdout)
-        stdout_handler.setFormatter(formatter)
-
-        for hdlr in log.handlers[:]:  # remove all old handlers
-            log.removeHandler(hdlr)
-        log.addHandler(file_handler)  # set the new handler
-        LOG.info("\n"
-                    "     _____    ___________   ______   ______\n"
-                    "    / ___/   /   ___  ___| / __   | / __  |\n"
-                    "   / / _    / _  |  | |   / /  / / / /_/ / \n"
-                    "  / / | |  / /_| |  | |  / /  / / /  _  |  \n"
-                    " / /__| | / ___  |  | | / /__/ / /  / | |  \n"
-                    " |______//_/   |_|  |_| |_____/ /__/  |_|  \n\n")
-        log.addHandler(stdout_handler)
-        LOG.info("Switched logging       : %s" % self.config.log_file())
 
     @staticmethod
     def error(msg, cause=None):

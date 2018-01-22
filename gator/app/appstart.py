@@ -5,21 +5,16 @@ import os
 import sys
 
 from core.configuration import PathFinder, GatorConf
+from gwid import util
 
 CONFIGURATION_DIR = "conf"
 LOGGING_CFG_FILE = "logging.conf"
 
 
 if __name__ == '__main__':
-    # compute application home
-    if getattr(sys, 'frozen', False):
-        # running in a bundle
-        application_home = sys._MEIPASS
-    else:
-        application_home = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
     # Start this module from anywhere on the system: append root directory of project.
-    sys.path.append(application_home)
+    sys.path.append(util.application_home())
 
     # Find out some initial paths
     path_finder = PathFinder()
@@ -33,11 +28,11 @@ if __name__ == '__main__':
     # For Windows single backslash path names:
     log_file = log_file.replace("\\", "\\\\")
     # configure logging
-    log_conf = os.path.join(application_home, CONFIGURATION_DIR, LOGGING_CFG_FILE)
+    log_conf = os.path.join(util.application_home(), CONFIGURATION_DIR, LOGGING_CFG_FILE)
     logging.config.fileConfig(log_conf, defaults={"log_file": log_file})
     # create a logger
     logger = logging.getLogger(__name__)
-    logger.info("Initialized logging: %s", log_file)
+    logger.info("Initialized logging: %s" % log_file)
     logger.info("\n"
     "     _____    ___________   ______   ______\n"
     "    / ___/   /   ___  ___| / __   | / __  |\n"
@@ -48,7 +43,7 @@ if __name__ == '__main__':
 
     # create the application
     from app.gator import Gator
-    application = Gator(sys.argv, application_home=application_home, gator_config=gator_config)
+    application = Gator(sys.argv, gator_config=gator_config)
 
     # start the application
     application.main_window.show()
