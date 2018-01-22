@@ -18,9 +18,8 @@ class Gator(QApplication):
 
     def __init__(self, *args, gator_config=None):
         QApplication.__init__(self, *args)
-        self.ctrl = Ctrl(gator_config)
-
         LOG.info("Gator started. application_home: %s" % util.application_home())
+        self.ctrl = Ctrl(gator_config)
 
         self.main_window = WMain()
         self.aboutToQuit.connect(self.__before_close__)

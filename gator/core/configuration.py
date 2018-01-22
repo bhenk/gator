@@ -71,12 +71,20 @@ class PathFinder(object):
     def first_existing_file(self):
         existing_files = self.existing_files()
         if len(existing_files) == 0:
-            return None
+            rescue_config_file = os.path.join(self.config_dir, "gator.cfg")
+            self.__path_list.append(rescue_config_file)
+            self.persist()
+            rescue_config = GatorConf(rescue_config_file)
+            rescue_config.persist()
+            return rescue_config_file
         else:
             return existing_files[0]
 
     def index(self, configuration_file):
-        return self.__path_list.index(configuration_file)
+        if configuration_file in self.__path_list:
+            return self.__path_list.index(configuration_file)
+        else:
+            return -1
 
 
 class Configuration(object):
@@ -94,7 +102,7 @@ class Configuration(object):
             return False
 
     def persist(self):
-        if self.config_file is not None and os.path.exists(self.config_file):
+        if self.config_file is not None:
             with open(self.config_file, "w") as cf:
                 self.parser.write(cf)
             return True
@@ -141,7 +149,7 @@ class GatorConf(Configuration):
     def __init__(self, config_file=None):
         Configuration.__init__(self, config_file)
         config_dir = find_config_dir("init")
-        self.default_log_file = os.path.join(config_dir, "gator.log")
+        self.default_log_file = os.path.join(config_dir, "logs", "gator.log")
 
 
     #####################################################
@@ -152,11 +160,19 @@ class GatorConf(Configuration):
     def set_log_file(self, log_file):
         self.__set_option__(GatorConf.SECTION_CORE, "log_file", log_file)
 
+    # kan weg
     def resource_dir(self, fallback=os.path.expanduser("~/tmp")):
         return self.parser.get(GatorConf.SECTION_CORE, "resource_dir", fallback=fallback)
 
     def set_resource_dir(self, resource_dir):
         self.__set_option__(GatorConf.SECTION_CORE, "resource_dir", resource_dir)
+    ## kan weg
+
+    def resources(self, fallback=list()):
+        return self.__get_list__(GatorConf.SECTION_CORE, "resources", fallback)
+
+    def set_resources(self, resources: list):
+        self.__set_list__(GatorConf.SECTION_CORE, "resources", resources)
 
     #####################################################
     # SECTION_WINDOW

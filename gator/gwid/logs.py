@@ -7,7 +7,6 @@ import sys
 
 
 def switch_logging(log_filename):
-    global LOG
     log_dir = os.path.dirname(log_filename)
     os.makedirs(log_dir, exist_ok=True)
 
