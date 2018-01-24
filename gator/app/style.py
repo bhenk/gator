@@ -5,16 +5,20 @@
 class Style(object):
 
     @staticmethod
-    def error():
-        return "color: rgb(255, 0, 0);"
-
-    @staticmethod
     def default():
         return "color: rgb(0, 0, 0);"
 
     @staticmethod
-    def parameter():
-        return "background-color: rgb(255, 255, 255);"
+    def red_text():
+        return "color: rgb(255, 0, 0);"
+
+    @staticmethod
+    def blue_text():
+        return "color: rgb(0, 0, 255);"
+
+    @staticmethod
+    def bold():
+        return "font-weight: bold;"
 
     @staticmethod
     def derived():
@@ -23,14 +27,6 @@ class Style(object):
     @staticmethod
     def alarm():
         return "color: rgb(255, 255, 255); background-color: rgb(225, 0, 0);"
-
-    @staticmethod
-    def blue_text():
-        return "color: rgb(0, 0, 255);"
-
-    @staticmethod
-    def red_text():
-        return "color: rgb(255, 0, 0);"
 
     @staticmethod
     def h2():

@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
+import locale
 import logging.config
 import os
 import sys
@@ -11,6 +12,7 @@ LOGGING_CFG_FILE = "logging.conf"
 
 
 if __name__ == '__main__':
+    #locale.setlocale(locale.LC_ALL, 'nl_NL')
 
     if getattr(sys, 'frozen', False):
         # running in a bundle
@@ -45,6 +47,8 @@ if __name__ == '__main__':
     "  / / | |  / /_| |  | |  / /  / / /  _  |  \n"
     " / /__| | / ___  |  | | / /__/ / /  / | |  \n"
     " |______//_/   |_|  |_| |_____/ /__/  |_|  \n\n")
+
+    logger.info("home: %s" % application_home)
 
     # create the application
     from app.gator import Gator

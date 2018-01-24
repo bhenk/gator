@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 import logging
-import os
 import subprocess
 
 import exifread
@@ -11,6 +10,7 @@ from PyQt5.QtWidgets import QLabel, QApplication, QWidget, QVBoxLayout, QCheckBo
     QHBoxLayout, QLayout, QMenu, QAction
 from app.widgets import BrowserWindow
 from core.navigator import Navigator
+from gwid.util import GIcon
 
 MAX_SIZE = 16777215
 MIN_SIZE = 0
@@ -20,14 +20,15 @@ LOG = logging.getLogger(__name__)
 
 class Viewer(QLabel):
 
-    viewer_changed = pyqtSignal()
+    sgn_viewer_changed = pyqtSignal()
 
-    def __init__(self, parent):
+    def __init__(self, parent, navigator):
         QLabel.__init__(self)
         self.parent = parent
+        self.navigator = navigator  # type: Navigator
         self.ctrl = QApplication.instance().ctrl
         self.ctrl.sgn_main_window_closing.connect(self.close)
-        # self.ctrl.switch_configuration.connect(self.on_switch_configuration)
+        self.ctrl.sgn_switch_resources.connect(self.on_sgn_switch_resources)
 
         self.setMinimumWidth(100)
         self.setMinimumHeight(100)
@@ -36,18 +37,15 @@ class Viewer(QLabel):
         self.popup = ViewerPopup(self)
         self.browser_window = None
 
-        self.navigator = Navigator(self.ctrl.config.resource_dir())
         self.pixmap = None
         self.current_file = None
-        self.filename = None
-        self.dir_name = None
         self.set_file(self.navigator.current_file)
 
         self.view_control = None
         self.show()
 
-    def on_switch_configuration(self):
-        LOG.debug("Switch configuration")
+    def on_sgn_switch_resources(self):
+        LOG.debug("sgn_switch_resources received")
         pass
 
     def resizeEvent(self, event):
@@ -68,12 +66,9 @@ class Viewer(QLabel):
             self.setPixmap(self.pixmap)
             self.resize(self.pixmap.size())
 
-            rel_file = os.path.relpath(self.current_file, self.ctrl.config.resource_dir())
-            self.dir_name = os.path.dirname(rel_file)
-            self.filename = os.path.basename(rel_file)
-            self.setWindowTitle(self.filename)
+            self.setWindowTitle(self.navigator.filename())
 
-        self.viewer_changed.emit()
+        self.sgn_viewer_changed.emit()
 
     def keyPressEvent(self, event: QKeyEvent):
         # navigate
@@ -88,10 +83,10 @@ class Viewer(QLabel):
         # toggle max size
         elif event.key() == Qt.Key_F1:
             self.toggle_max_height(self.maximumHeight() == MAX_SIZE)
-            self.viewer_changed.emit()
+            self.sgn_viewer_changed.emit()
         elif event.key() == Qt.Key_F2:
             self.toggle_max_width(self.maximumWidth() == MAX_SIZE)
-            self.viewer_changed.emit()
+            self.sgn_viewer_changed.emit()
         elif event.key() == 16777250: # Ctrl
             self.show_hide_control()
 
@@ -161,6 +156,7 @@ class ViewControl(QWidget):
         QWidget.__init__(self, None)
         self.viewer = viewer
         self.ctrl = viewer.ctrl
+        self.navigator = viewer.navigator
 
         vbl_0 = QVBoxLayout(self)
         vbl_0.setSizeConstraint(QLayout.SetFixedSize)
@@ -183,22 +179,22 @@ class ViewControl(QWidget):
         grid.setSpacing(0)
 
         button_up = QPushButton(self)
-        button_up.setIcon(self.ctrl.icon("chevron-sign-up.png"))
+        button_up.setIcon(GIcon.arr_up())
         button_up.clicked.connect(self.viewer.go_file_up)
         grid.addWidget(button_up, 1, 2)
 
         button_left = QPushButton(self)
-        button_left.setIcon(self.ctrl.icon("chevron-sign-left.png"))
+        button_left.setIcon(GIcon.arr_left())
         button_left.clicked.connect(self.viewer.go_file_left)
         grid.addWidget(button_left, 2, 1)
 
         button_right = QPushButton(self)
-        button_right.setIcon(self.ctrl.icon("chevron-sign-right.png"))
+        button_right.setIcon(GIcon.arr_right())
         button_right.clicked.connect(self.viewer.go_file_right)
         grid.addWidget(button_right, 2, 3)
 
         button_down = QPushButton(self)
-        button_down.setIcon(self.ctrl.icon("chevron-sign-down.png"))
+        button_down.setIcon(GIcon.arr_down())
         button_down.clicked.connect(self.viewer.go_file_down)
         grid.addWidget(button_down, 3, 2)
 
@@ -207,7 +203,7 @@ class ViewControl(QWidget):
         hbox.addStretch(1)
         vbl_0.addLayout(hbox)
 
-        self.viewer.viewer_changed.connect(self.on_viewer_changed)
+        self.viewer.sgn_viewer_changed.connect(self.on_viewer_changed)
         self.on_viewer_changed()
 
         self.show()
@@ -216,10 +212,7 @@ class ViewControl(QWidget):
         self.viewer.keyPressEvent(event)
 
     def on_viewer_changed(self):
-        if self.viewer.current_file is not None:
-            self.btn_current_file.setText(self.viewer.dir_name + "\n" + self.viewer.filename)
-        else:
-            self.btn_current_file.setText("")
+        self.btn_current_file.setText(self.navigator.dir_name() + "\n" + self.navigator.filename())
 
         self.toggle_max_height.setChecked(self.viewer.maximumHeight() != MAX_SIZE)
         self.toggle_max_width.setChecked(self.viewer.maximumWidth() != MAX_SIZE)
@@ -230,7 +223,7 @@ class ViewerPopup(QMenu):
     def __init__(self, viewer: Viewer):
         QMenu.__init__(self, "Viewer", viewer)
         self.viewer = viewer
-        self.viewer.viewer_changed.connect(self.on_viewer_changed)
+        self.viewer.sgn_viewer_changed.connect(self.on_viewer_changed)
 
         action_control = QAction("Show/Hide Control", self)
         action_control.triggered.connect(viewer.show_hide_control)

@@ -6,9 +6,6 @@ from PyQt5.QtGui import QCloseEvent
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QTabWidget
 from app.ctrl import Ctrl
 from app.gframe import GFrame
-from app.tconfig import ConfigureFrame
-from app.tview import ViewFrame
-from gwid import util
 
 LOG = logging.getLogger(__name__)
 
@@ -18,7 +15,7 @@ class Gator(QApplication):
 
     def __init__(self, *args, gator_config=None):
         QApplication.__init__(self, *args)
-        LOG.info("Gator started. application_home: %s" % util.application_home())
+        LOG.info("Gator started")
         self.ctrl = Ctrl(gator_config)
 
         self.main_window = WMain()
@@ -38,8 +35,8 @@ class WMain(QMainWindow):
         self.ctrl = QApplication.instance().ctrl
         self.setWindowTitle("Gator")
         self.create_menus()
-        self.tabframe = TabbedFrame(self)
-        self.setCentralWidget(self.tabframe)
+        self.gframe = GFrame(self)
+        self.setCentralWidget(self.gframe)
         self.resize(self.ctrl.config.main_window_width(), self.ctrl.config.main_window_height())
 
     def create_menus(self):
@@ -59,21 +56,3 @@ class WMain(QMainWindow):
         self.ctrl.close()
         event.accept()
 
-
-# ################################################################
-class TabbedFrame(QTabWidget):
-
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.ctrl = QApplication.instance().ctrl
-        self.previndex = -1
-        self.init_ui()
-
-    def init_ui(self):
-        self.gframe = GFrame(self)
-        self.frame_view = ViewFrame(self, 0)
-        self.frame_configure = ConfigureFrame(self, 1)
-
-        self.addTab(self.gframe, "Main")
-        self.addTab(self.frame_view, "View")
-        self.addTab(self.frame_configure, "Configure")

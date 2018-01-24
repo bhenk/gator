@@ -2,20 +2,21 @@
 # -*- coding: utf-8 -*-
 import os
 
-from PyQt5.QtCore import QItemSelectionModel, Qt
+from PyQt5.QtCore import QItemSelectionModel, Qt, QSize
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QListView, QAbstractItemView, QPushButton, QFileDialog, \
     QInputDialog
-from gwid import util
+from gwid.util import GIcon
 
 
 class GListDialog(QDialog):
 
-    def __init__(self, parent, item_list=list(), window_title="Items"):
+    def __init__(self, parent, item_list=list(), window_title="Items", allow_duplicates=False):
         QDialog.__init__(self, parent)
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.__str_list = list(item_list)
         self.setWindowTitle(window_title)
+        self.allow_duplicates = allow_duplicates
 
         vbox = QVBoxLayout(self)
 
@@ -35,22 +36,26 @@ class GListDialog(QDialog):
         list_box.addLayout(list_btn_box)
         list_btn_box.addStretch(1)
         self.btn_up = QPushButton()
-        self.btn_up.setIcon(util.icon(util.ICON_ARROW_UP))
+        self.btn_up.setIcon(GIcon.arr2_up())
         self.btn_up.clicked.connect(self.on_btn_up_clicked)
         list_btn_box.addWidget(self.btn_up)
         self.btn_down = QPushButton()
-        self.btn_down.setIcon(util.icon(util.ICON_ARROW_DOWN))
+        self.btn_down.setIcon(GIcon.arr2_down())
         self.btn_down.clicked.connect(self.on_btn_down_clicked)
         list_btn_box.addWidget(self.btn_down)
         list_btn_box.addStretch(1)
 
         btn_box = QHBoxLayout()
         vbox.addLayout(btn_box)
-        btn_add = QPushButton(" + ")
+        btn_add = QPushButton()
+        btn_add.setIcon(GIcon.plus())
+        btn_add.setIconSize(QSize(10, 10))
         btn_add.clicked.connect(self.on_btn_add_clicked)
         btn_box.addWidget(btn_add)
 
-        self.btn_delete = QPushButton(" - ")
+        self.btn_delete = QPushButton()
+        self.btn_delete.setIcon(GIcon.minus())
+        self.btn_delete.setIconSize(QSize(10, 10))
         self.btn_delete.clicked.connect(self.on_btn_delete_clicked)
         btn_box.addWidget(self.btn_delete)
 
@@ -113,12 +118,14 @@ class GListDialog(QDialog):
         self.selection_model.setCurrentIndex(qmodelindex, QItemSelectionModel.Select)
 
     def insert_item(self, index, item):
-        self.__str_list.insert(index, item)
-        self.populate_model()
+        if item not in self.__str_list or self.allow_duplicates:
+            self.__str_list.insert(index, item)
+            self.populate_model()
 
     def append_item(self, item):
-        self.__str_list.append(item)
-        self.populate_model()
+        if item not in self.__str_list or self.allow_duplicates:
+            self.__str_list.append(item)
+            self.populate_model()
 
 
 class GPathListDialog(GListDialog):
@@ -126,22 +133,22 @@ class GPathListDialog(GListDialog):
     MODE_EXISTING_DIRECTORY = 1
     MODE_SAVE_FILE_NAME = 2
 
-    def __init__(self, parent, item_list=list(), window_title="Paths", mode=MODE_EXISTING_FILE,
+    def __init__(self, parent, item_list=list(), window_title="Paths", allow_duplicates=False, mode=MODE_EXISTING_FILE,
                  start_path=os.path.expanduser("~")):
-        GListDialog.__init__(self, parent, item_list, window_title)
+        GListDialog.__init__(self, parent, item_list, window_title, allow_duplicates)
         self.mode = mode
         self.start_path = start_path
 
     def on_btn_add_clicked(self):
-        if self.mode == 0:
+        if self.mode == self.MODE_EXISTING_FILE:
             filename = QFileDialog.getOpenFileName(self.parent(), "Open File", self.start_path)
             if filename[0] != "":
                 self.insert_item(0, filename[0])
-        elif self.mode == 1:
+        elif self.mode == self.MODE_EXISTING_DIRECTORY:
             filename = QFileDialog.getExistingDirectory(self.parent(), "Open Folder", self.start_path)
             if filename != "":
                 self.insert_item(0, filename)
-        elif self.mode == 2:
+        elif self.mode == self.MODE_SAVE_FILE_NAME:
             filename = QFileDialog.getSaveFileName(self.parent(), "Save File", self.start_path)
-            if filename != "":
+            if filename[0] != "":
                 self.insert_item(0, filename[0])

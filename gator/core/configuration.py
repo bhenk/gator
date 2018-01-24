@@ -35,6 +35,8 @@ class PathFinder(object):
         self.config_file = os.path.join(self.config_dir, file_name)
         self.__path_list = []
         self.read()
+        GatorConf(self.rescue_config_file()).persist()
+        self.append_conditionally(self.rescue_config_file())
 
     def read(self):
         if os.path.exists(self.config_file):
@@ -50,10 +52,26 @@ class PathFinder(object):
         return self.__path_list
 
     def set_path_list(self, path_list: list):
+        self.__path_list.clear()
         self.__path_list = path_list
+        self.append_conditionally(self.rescue_config_file())
 
     def append(self, path):
         self.__path_list.append(path)
+
+    def insert(self, index, path):
+        self.__path_list.insert(index, path)
+
+    def append_conditionally(self, path):
+        if path not in self.__path_list:
+            self.__path_list.append(path)
+
+    def insert_conditionally(self, index, path):
+        if path not in self.__path_list:
+            self.insert(index, path)
+
+    def rescue_config_file(self):
+        return os.path.join(self.config_dir, "gator.cfg")
 
     def existing_files(self):
         return [f for f in self.__path_list if os.path.exists(f) and os.path.isfile(f)]
@@ -71,7 +89,7 @@ class PathFinder(object):
     def first_existing_file(self):
         existing_files = self.existing_files()
         if len(existing_files) == 0:
-            rescue_config_file = os.path.join(self.config_dir, "gator.cfg")
+            rescue_config_file = self.rescue_config_file()
             self.__path_list.append(rescue_config_file)
             self.persist()
             rescue_config = GatorConf(rescue_config_file)
@@ -85,6 +103,20 @@ class PathFinder(object):
             return self.__path_list.index(configuration_file)
         else:
             return -1
+
+    def file_exists(self, index):
+        if index < 0 or index > len(self.__path_list) - 1:
+            return False
+        else:
+            filename = self.__path_list[index]
+            return os.path.exists(filename)
+
+    def dir_exists(self, index):
+        if index < 0 or index > len(self.__path_list) - 1:
+            return False
+        else:
+            filename = self.__path_list[index]
+            return os.path.exists(os.path.dirname(filename))
 
 
 class Configuration(object):
