@@ -1,9 +1,10 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 import logging
+from PyQt5.QtCore import Qt
 
-from PyQt5.QtGui import QCloseEvent
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QTabWidget
+from PyQt5.QtGui import QCloseEvent, QKeyEvent
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, qApp
 from app.ctrl import Ctrl
 from app.gframe import GFrame
 
@@ -45,6 +46,14 @@ class WMain(QMainWindow):
 
         self.menu_file = QMenu("File", self)
         self.menubar.addMenu(self.menu_file)
+
+    def keyPressEvent(self, event: QKeyEvent):
+        if event.key() == Qt.Key_G:
+            self.hide()
+        # X quit
+        elif event.key() == Qt.Key_X:
+            LOG.info("Quiting application")
+            qApp.quit()
 
     def close(self):
         LOG.debug("Main window is closing")

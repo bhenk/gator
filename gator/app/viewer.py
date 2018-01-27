@@ -5,9 +5,9 @@ import subprocess
 
 import exifread
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QPixmap, QKeyEvent, QCloseEvent, QMouseEvent
+from PyQt5.QtGui import QPixmap, QKeyEvent, QCloseEvent, QMouseEvent, QFont
 from PyQt5.QtWidgets import QLabel, QApplication, QWidget, QVBoxLayout, QCheckBox, QGridLayout, QPushButton, \
-    QHBoxLayout, QLayout, QMenu, QAction
+    QHBoxLayout, QLayout, QMenu, QAction, qApp, QMainWindow, QFrame
 from app.widgets import BrowserWindow
 from core.navigator import Navigator
 from gwid.util import GIcon
@@ -39,14 +39,14 @@ class Viewer(QLabel):
 
         self.pixmap = None
         self.current_file = None
-        self.set_file(self.navigator.current_file)
+        self.set_file(self.navigator.current_file())
 
         self.view_control = None
         self.show()
 
     def on_sgn_switch_resources(self):
         LOG.debug("sgn_switch_resources received")
-        pass
+        self.navigator = Navigator(self.ctrl.resources)
 
     def resizeEvent(self, event):
         pixmap = self.pixmap.scaled(event.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -88,9 +88,23 @@ class Viewer(QLabel):
             self.toggle_max_width(self.maximumWidth() == MAX_SIZE)
             self.sgn_viewer_changed.emit()
         elif event.key() == 16777250: # Ctrl
-            self.show_hide_control()
+            self.toggle_control()
+        # G activate main window
+        elif event.key() == Qt.Key_G:
+            self.activate_main_window()
+        # X quit
+        elif event.key() == Qt.Key_X:
+            LOG.info("Quiting application")
+            qApp.quit()
 
-    def show_hide_control(self):
+    @staticmethod
+    def activate_main_window():
+        main_window = QApplication.instance().main_window
+        main_window.showNormal()
+        main_window.raise_()
+        main_window.activateWindow()
+
+    def toggle_control(self):
         if self.view_control is None:
             self.view_control = ViewControl(self)
         elif self.view_control.isHidden():
@@ -161,11 +175,12 @@ class ViewControl(QWidget):
         vbl_0 = QVBoxLayout(self)
         vbl_0.setSizeConstraint(QLayout.SetFixedSize)
 
-        self.btn_current_file = QPushButton("File", self)
-        self.btn_current_file.setFlat(True)
-        self.btn_current_file.setStyleSheet("Text-align:left")
-        self.btn_current_file.clicked.connect(self.viewer.copy_filename)
-        vbl_0.addWidget(self.btn_current_file)
+        self.lbl_current_file = QLabel()
+        self.lbl_current_file.setFont(QFont("Courier New", 12))
+        self.lbl_current_file.setTextFormat(Qt.RichText)
+        self.lbl_current_file.setTextInteractionFlags(Qt.TextBrowserInteraction)
+        self.lbl_current_file.setOpenExternalLinks(True)
+        vbl_0.addWidget(self.lbl_current_file)
 
         self.toggle_max_height = QCheckBox("fixed max height (F1)", self)
         self.toggle_max_height.toggled.connect(self.viewer.toggle_max_height)
@@ -181,22 +196,26 @@ class ViewControl(QWidget):
         button_up = QPushButton(self)
         button_up.setIcon(GIcon.arr_up())
         button_up.clicked.connect(self.viewer.go_file_up)
-        grid.addWidget(button_up, 1, 2)
+        grid.addWidget(button_up, 0, 1)
 
         button_left = QPushButton(self)
         button_left.setIcon(GIcon.arr_left())
         button_left.clicked.connect(self.viewer.go_file_left)
-        grid.addWidget(button_left, 2, 1)
+        grid.addWidget(button_left, 1, 0)
 
         button_right = QPushButton(self)
         button_right.setIcon(GIcon.arr_right())
         button_right.clicked.connect(self.viewer.go_file_right)
-        grid.addWidget(button_right, 2, 3)
+        grid.addWidget(button_right, 1, 2)
 
         button_down = QPushButton(self)
         button_down.setIcon(GIcon.arr_down())
         button_down.clicked.connect(self.viewer.go_file_down)
-        grid.addWidget(button_down, 3, 2)
+        grid.addWidget(button_down, 2, 1)
+
+        self.lbl_history_index = QLabel()
+        self.lbl_history_index.setAlignment(Qt.AlignCenter)
+        grid.addWidget(self.lbl_history_index, 1, 1)
 
         hbox = QHBoxLayout()
         hbox.addLayout(grid)
@@ -212,8 +231,9 @@ class ViewControl(QWidget):
         self.viewer.keyPressEvent(event)
 
     def on_viewer_changed(self):
-        self.btn_current_file.setText(self.navigator.dir_name() + "\n" + self.navigator.filename())
-
+        self.lbl_current_file.setText(self.navigator.hyperlink())
+        self.lbl_current_file.setToolTip(self.navigator.current_file())
+        self.lbl_history_index.setText(str(self.navigator.history_index()))
         self.toggle_max_height.setChecked(self.viewer.maximumHeight() != MAX_SIZE)
         self.toggle_max_width.setChecked(self.viewer.maximumWidth() != MAX_SIZE)
 
@@ -226,7 +246,7 @@ class ViewerPopup(QMenu):
         self.viewer.sgn_viewer_changed.connect(self.on_viewer_changed)
 
         action_control = QAction("Show/Hide Control", self)
-        action_control.triggered.connect(viewer.show_hide_control)
+        action_control.triggered.connect(viewer.toggle_control)
         self.addAction(action_control)
 
         self.action_preview = QAction("Open in Preview", self)

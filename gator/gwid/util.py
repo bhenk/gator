@@ -9,12 +9,6 @@ from PyQt5.QtGui import QIcon
 LOG = logging.getLogger(__name__)
 
 
-ICON_ARROW_DOWN = "img/arrow1-down.png"
-ICON_ARROW_LEFT = "img/arrow1-left.png"
-ICON_ARROW_UP = "img/arrow1-up.png"
-ICON_ARROW_RIGHT = "img/arrow1-right.png"
-
-
 def icon(filename):
     path = pkg_resources.resource_filename(__name__, filename)
     if not os.path.exists(path):

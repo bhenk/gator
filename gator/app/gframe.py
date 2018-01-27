@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import os
+from inspect import getframeinfo, currentframe
 
 from PyQt5.QtWidgets import QFrame, QApplication, QVBoxLayout, QLabel, QComboBox, QPushButton, QGridLayout, QHBoxLayout
 from app.style import Style
@@ -87,11 +88,10 @@ class GFrame(QFrame):
 
     def on_sgn_switch_configuration(self):
         LOG.debug("sgn_switch_configuration received")
-        if self.path_combo.currentIndex() != self.ctrl.configuration_index:
-            self.config = self.ctrl.config  # type: GatorConf
-            self.resources = self.ctrl.resources  # type: Resources
-            self.path_combo.setCurrentIndex(self.ctrl.configuration_index)
-            self.lbl_resources_count.setText(self.resources.to_string())
+        self.config = self.ctrl.config  # type: GatorConf
+        self.resources = self.ctrl.resources  # type: Resources
+        self.path_combo.setCurrentIndex(self.ctrl.configuration_index)
+        self.lbl_resources_count.setText(self.resources.to_string())
 
     # ##### resources #####
     def on_sgn_switch_resources(self):
@@ -101,7 +101,7 @@ class GFrame(QFrame):
         self.btn_viewer.setEnabled(self.resources.resource_count() > 0)
 
     def on_btn_resources_clicked(self):
-        pd = GPathListDialog(self, self.config.resources(), window_title="Resources",
+        pd = GPathListDialog(self, self.resources.path_list(), window_title="Resources",
                              mode=GPathListDialog.MODE_EXISTING_DIRECTORY,
                              start_path=os.path.dirname(self.ctrl.gator_home), allow_duplicates=True)
         pd.deleteLater()

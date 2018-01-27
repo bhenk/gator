@@ -122,49 +122,52 @@ class PathFinder(object):
 class Configuration(object):
 
     def __init__(self, config_file=None):
-        self.config_file = config_file
-        self.parser = ConfigParser()
+        self.__config_file = config_file
+        self._parser = ConfigParser()
         self.read()
 
+    def config_file(self):
+        return self.__config_file
+
     def read(self):
-        if self.config_file is not None and os.path.exists(self.config_file):
-            self.parser.read(self.config_file)
+        if self.__config_file is not None and os.path.exists(self.__config_file):
+            self._parser.read(self.__config_file)
             return True
         else:
             return False
 
     def persist(self):
-        if self.config_file is not None:
-            with open(self.config_file, "w") as cf:
-                self.parser.write(cf)
+        if self.__config_file is not None:
+            with open(self.__config_file, "w") as cf:
+                self._parser.write(cf)
             return True
         else:
             return False
 
     def __set_option__(self, section, option, value):
-        if not self.parser.has_section(section):
-            self.parser.add_section(section)
+        if not self._parser.has_section(section):
+            self._parser.add_section(section)
         if value is None:
-            self.parser.remove_option(section, option)
+            self._parser.remove_option(section, option)
         else:
-            self.parser.set(section, option, value)
+            self._parser.set(section, option, value)
 
     def __get_int__(self, section, option, fallback=0):
-        value = self.parser.get(section, option, fallback=str(fallback))
+        value = self._parser.get(section, option, fallback=str(fallback))
         return int(value)
 
     def __set_int__(self, section, option, value):
         self.__set_option__(section, option, str(value))
 
     def __get_boolean__(self, section, option, fallback=True):
-        value = self.parser.get(section, option, fallback=str(fallback))
+        value = self._parser.get(section, option, fallback=str(fallback))
         return not(value == "False" or value == "None")
 
     def __set_boolean__(self, section, option, value):
         self.__set_option__(section, option, str(value))
 
     def __get_list__(self, section, option, fallback=list()):
-        value = self.parser.get(section, option, fallback="\n".join(fallback))
+        value = self._parser.get(section, option, fallback="\n".join(fallback))
         if value == "":
             return []
         else:
@@ -187,18 +190,10 @@ class GatorConf(Configuration):
     #####################################################
     # SECTION CORE
     def log_file(self):
-        return self.parser.get(GatorConf.SECTION_CORE, "log_file", fallback=self.default_log_file)
+        return self._parser.get(GatorConf.SECTION_CORE, "log_file", fallback=self.default_log_file)
 
     def set_log_file(self, log_file):
         self.__set_option__(GatorConf.SECTION_CORE, "log_file", log_file)
-
-    # kan weg
-    def resource_dir(self, fallback=os.path.expanduser("~/tmp")):
-        return self.parser.get(GatorConf.SECTION_CORE, "resource_dir", fallback=fallback)
-
-    def set_resource_dir(self, resource_dir):
-        self.__set_option__(GatorConf.SECTION_CORE, "resource_dir", resource_dir)
-    ## kan weg
 
     def resources(self, fallback=list()):
         return self.__get_list__(GatorConf.SECTION_CORE, "resources", fallback)

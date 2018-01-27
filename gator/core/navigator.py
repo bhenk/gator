@@ -65,65 +65,74 @@ class Resources(object):
 class Navigator(object):
 
     def __init__(self, resources=Resources()):
-        self.resources = resources
-        self.__size = self.resources.resource_count()
-        self.history_list = list()
-        self.history_pointer = 0
-        self.index = -1
-        self.current_file = self.random_file()
-        self.history_list.append(self.current_file)
+        self.__resources = resources
+        self.__size = self.__resources.resource_count()
+        self.__history_list = list()
+        self.__history_index = 0
+        self.__index = -1
+        self.__current_file = self.random_file()
+        self.__history_list.append(self.__current_file)
+
+    def current_file(self):
+        return self.__current_file
+
+    def history_index(self):
+        return self.__history_index
 
     def random_file(self):
         if self.__size > 0:
-            self.index = random.randint(0, self.__size - 1)
-            return self.resources.get_resource(self.index)
+            self.__index = random.randint(0, self.__size - 1)
+            return self.__resources.get_resource(self.__index)
         else:
             return None
 
     def go_down(self):
-        self.history_pointer += 1
-        if self.history_pointer > len(self.history_list) - 1:
-            self.current_file = self.random_file()
-            self.history_list.append(self.current_file)
+        self.__history_index += 1
+        if self.__history_index > len(self.__history_list) - 1:
+            self.__current_file = self.random_file()
+            self.__history_list.append(self.__current_file)
         else:
-            self.current_file = self.history_list[self.history_pointer]
-            self.index = self.resources.get_index(self.current_file)
-        return self.current_file
+            self.__current_file = self.__history_list[self.__history_index]
+            self.__index = self.__resources.get_index(self.__current_file)
+        return self.__current_file
 
     def go_up(self):
-        self.history_pointer -= 1
-        if self.history_pointer < 0:
-            self.history_pointer = 0
-        self.current_file = self.history_list[self.history_pointer]
-        self.index = self.resources.get_index(self.current_file)
-        return self.current_file
+        self.__history_index -= 1
+        if self.__history_index < 0:
+            self.__history_index = 0
+        self.__current_file = self.__history_list[self.__history_index]
+        self.__index = self.__resources.get_index(self.__current_file)
+        return self.__current_file
 
     def go_left(self):
-        self.index -= 1
-        if self.index < 0:
-            self.index = -1
-        self.current_file = self.resources.get_resource(self.index)
-        self.history_pointer += 1
-        self.history_list.append(self.current_file)
-        return self.current_file
+        self.__index -= 1
+        if self.__index < 0:
+            self.__index = 0
+        self.__current_file = self.__resources.get_resource(self.__index)
+        self.__history_index += 1
+        self.__history_list.append(self.__current_file)
+        return self.__current_file
 
     def go_right(self):
-        self.index += 1
-        if self.index > self.__size -1:
-            self.index = self.__size -1
-        self.current_file = self.resources.get_resource(self.index)
-        self.history_pointer += 1
-        self.history_list.append(self.current_file)
-        return self.current_file
+        self.__index += 1
+        if self.__index > self.__size -1:
+            self.__index = self.__size - 1
+        self.__current_file = self.__resources.get_resource(self.__index)
+        self.__history_index += 1
+        self.__history_list.append(self.__current_file)
+        return self.__current_file
 
     def filename(self):
-        if self.current_file is None:
+        if self.__current_file is None:
             return None
         else:
-            return os.path.basename(self.current_file)
+            return os.path.basename(self.__current_file)
 
     def dir_name(self):
-        if self.current_file is None:
+        if self.__current_file is None:
             return None
         else:
-            return os.path.dirname(self.current_file)
+            return os.path.dirname(self.__current_file)
+
+    def hyperlink(self):
+        return "<a href=\"file://%s\">%s</a>" % (self.__current_file, self.filename()[:20])
