@@ -17,6 +17,10 @@ class Style(object):
         return "color: rgb(0, 0, 255);"
 
     @staticmethod
+    def green_text():
+        return "color: rgb(19, 79, 55);"
+
+    @staticmethod
     def bold():
         return "font-weight: bold;"
 

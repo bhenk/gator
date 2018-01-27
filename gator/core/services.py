@@ -12,6 +12,10 @@ def application_home():
         return os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 
+def chunk_string(string, length):
+    return (string[0+i:length+i] for i in range(0, len(string), length))
+
+
 class Format(object):
 
     @staticmethod

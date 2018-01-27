@@ -3,6 +3,7 @@
 import os
 import random
 
+from core import services
 from core.services import Format
 
 EXTENSIONS = ['.jpg', '.bmp', '.png', '.gif']
@@ -64,17 +65,26 @@ class Resources(object):
 
 class Navigator(object):
 
-    def __init__(self, resources=Resources()):
+    def __init__(self, resources=Resources(), filename=None):
         self.__resources = resources
         self.__size = self.__resources.resource_count()
         self.__history_list = list()
         self.__history_index = 0
         self.__index = -1
-        self.__current_file = self.random_file()
+        self.__current_file = None
+        if filename:
+            self.__index = self.__resources.get_index(filename)
+            if self.__index > -1:
+                self.__current_file = filename
+        if self.__current_file is None:
+            self.__current_file = self.random_file()
         self.__history_list.append(self.__current_file)
 
     def current_file(self):
         return self.__current_file
+
+    def index(self):
+        return self.__index
 
     def history_index(self):
         return self.__history_index
@@ -122,7 +132,7 @@ class Navigator(object):
         self.__history_list.append(self.__current_file)
         return self.__current_file
 
-    def filename(self):
+    def basename(self):
         if self.__current_file is None:
             return None
         else:
@@ -135,4 +145,52 @@ class Navigator(object):
             return os.path.dirname(self.__current_file)
 
     def hyperlink(self):
-        return "<a href=\"file://%s\">%s</a>" % (self.__current_file, self.filename()[:20])
+        return "<a href=\"file://%s\">%s</a>" % (self.__current_file, self.basename()[:20])
+
+    def g_image(self):
+        return GImage.from_navigator(self)
+
+
+class GImage(object):
+
+    @staticmethod
+    def from_navigator(navigator: Navigator):
+        return GImage(navigator.current_file(), navigator.index(), navigator.history_index())
+
+    def __init__(self, filename, index=-1, history_index=-1):
+        self.__filename = filename
+        self.__index = index
+        self.__history_index = history_index
+
+    def filename(self):
+        return self.__filename
+
+    def index(self):
+        return self.__index
+
+    def history_index(self):
+        return self.__history_index
+
+    def basename(self):
+        if self.__filename is None:
+            return None
+        else:
+            return os.path.basename(self.__filename)
+
+    def dir_name(self):
+        if self.__filename is None:
+            return None
+        else:
+            return os.path.dirname(self.__filename)
+
+    def hyperlink(self, length=0, split=False):
+        if length > 0:
+            generator = services.chunk_string(self.__filename, length)
+            display = "\n".join(list(generator))
+        elif split:
+            display = "%s %s" % (self.dir_name(), self.basename())
+        else:
+            display = self.__filename
+        return "<a href=\"file://%s\">%s</a>" % (self.__filename, display)
+
+

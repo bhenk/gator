@@ -32,6 +32,8 @@ class Ctrl(QObject):
         self.resources = Resources(self.config.resources())
         LOG.info(self.resources.to_string())
 
+        self.last_viewer = None
+
     def close(self):
         LOG.info("Closing Ctrl")
         self.sgn_main_window_closing.emit()
@@ -59,6 +61,9 @@ class Ctrl(QObject):
         self.resources = Resources(self.config.resources())
         LOG.info(self.resources.to_string())
         self.sgn_switch_resources.emit()
+
+    def set_last_viewer(self, viewer):
+        self.last_viewer = viewer
 
     @staticmethod
     def error(msg, cause=None):

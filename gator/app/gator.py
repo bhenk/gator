@@ -1,12 +1,13 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 import logging
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QPoint
 
 from PyQt5.QtGui import QCloseEvent, QKeyEvent
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, qApp
 from app.ctrl import Ctrl
 from app.gframe import GFrame
+from gwid.util import GHotKey
 
 LOG = logging.getLogger(__name__)
 
@@ -38,7 +39,8 @@ class WMain(QMainWindow):
         self.create_menus()
         self.gframe = GFrame(self)
         self.setCentralWidget(self.gframe)
-        self.resize(self.ctrl.config.main_window_width(), self.ctrl.config.main_window_height())
+        # self.resize(self.ctrl.config.main_window_width(), self.ctrl.config.main_window_height())
+        self.move(self.ctrl.config.main_window_x(), self.ctrl.config.main_window_y())
 
     def create_menus(self):
         self.menubar = self.menuBar()
@@ -48,18 +50,17 @@ class WMain(QMainWindow):
         self.menubar.addMenu(self.menu_file)
 
     def keyPressEvent(self, event: QKeyEvent):
-        if event.key() == Qt.Key_G:
-            self.hide()
-        # X quit
-        elif event.key() == Qt.Key_X:
-            LOG.info("Quiting application")
-            qApp.quit()
+        if GHotKey.matches(event):
+            return
 
     def close(self):
         LOG.debug("Main window is closing")
         self.ctrl.config.set_main_window_height(self.height())
         self.ctrl.config.set_main_window_width(self.width())
+        self.ctrl.config.set_main_window_x(self.pos().x())
+        self.ctrl.config.set_main_window_y(self.pos().y())
         self.ctrl.config.persist()
+
 
     def closeEvent(self, event: QCloseEvent):
         self.ctrl.close()

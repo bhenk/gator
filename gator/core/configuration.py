@@ -215,5 +215,17 @@ class GatorConf(Configuration):
     def set_main_window_height(self, height):
         self.__set_int__(GatorConf.SECTION_WINDOW, "main_window_height", height)
 
+    # ----------------------------------------------------
+    def main_window_x(self, fallback=0):
+        return self.__get_int__(GatorConf.SECTION_WINDOW, "main_window_x", fallback=fallback)
+
+    def set_main_window_x(self, x_pos):
+        self.__set_int__(GatorConf.SECTION_WINDOW, "main_window_x", x_pos)
+
+    def main_window_y(self, fallback=0):
+        return self.__get_int__(GatorConf.SECTION_WINDOW, "main_window_y", fallback=fallback)
+
+    def set_main_window_y(self, y_pos):
+        self.__set_int__(GatorConf.SECTION_WINDOW, "main_window_y", y_pos)
 
 

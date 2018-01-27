@@ -4,11 +4,15 @@ import logging
 import os
 from inspect import getframeinfo, currentframe
 
-from PyQt5.QtWidgets import QFrame, QApplication, QVBoxLayout, QLabel, QComboBox, QPushButton, QGridLayout, QHBoxLayout
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QPixmap, QKeySequence, QMouseEvent
+from PyQt5.QtWidgets import QFrame, QApplication, QVBoxLayout, QLabel, QComboBox, QPushButton, QGridLayout, QHBoxLayout, \
+    QSizePolicy, QWidget
 from app.style import Style
 from app.viewer import Viewer
 from core.configuration import PathFinder, GatorConf
-from core.navigator import Resources, Navigator
+from core.navigator import Resources, Navigator, GImage
+from gwid.gwidget import ClickableLabel
 from gwid.listdialog import GPathListDialog
 from gwid.util import GIcon
 
@@ -19,6 +23,8 @@ class GFrame(QFrame):
 
     def __init__(self, parent):
         super().__init__(parent)
+        self.ctrl_v = QKeySequence.fromString("Ctrl+V", 0)
+
         self.ctrl = QApplication.instance().ctrl
         self.ctrl.sgn_switch_configuration.connect(self.on_sgn_switch_configuration)
         self.ctrl.sgn_switch_resources.connect(self.on_sgn_switch_resources)
@@ -27,11 +33,12 @@ class GFrame(QFrame):
         self.resources = self.ctrl.resources  # type: Resources
 
         vbl0 = QVBoxLayout(self)
+        vbl0.setSpacing(5)
+        # vbl0.setContentsMargins(3, 3, 3, 0)
         grid = QGridLayout()
         grid.setColumnStretch(1, 1)
-        # grid.setContentsMargins(0, 0, 0, 0)  # left, top, right, bottom
+        grid.setContentsMargins(0, 0, 0, 0)  # left, top, right, bottom
         grid.setVerticalSpacing(5)
-        # grid.setHorizontalSpacing(5)
         vbl0.addLayout(grid)
         lbl_config = QLabel("configuration")
         self.path_combo = QComboBox(self)
@@ -42,23 +49,21 @@ class GFrame(QFrame):
         grid.addWidget(self.path_combo, 0, 1)
         grid.addWidget(btn_path, 0, 2)
 
-        self.lbl_resources_count = QLabel(self.resources.to_string())
-        self.lbl_resources_count.setStyleSheet(Style.blue_text() + Style.bold())
-        btn_resources = QPushButton("...")
-        btn_resources.clicked.connect(self.on_btn_resources_clicked)
-        grid.addWidget(self.lbl_resources_count, 1, 0, 2, 0)
-        grid.addWidget(btn_resources, 1, 2)
-
-        vbl0.addStretch(1)
-
-        btn_box = QHBoxLayout()
-        vbl0.addLayout(btn_box)
-        btn_box.addStretch(1)
-
-        self.btn_viewer = QPushButton()
+        self.btn_viewer = QPushButton(self.ctrl_v.toString(0))
+        self.btn_viewer.setShortcut(self.ctrl_v)
         self.btn_viewer.setIcon(GIcon.viewer())
         self.btn_viewer.clicked.connect(self.on_btn_viewer_clicked)
-        btn_box.addWidget(self.btn_viewer)
+        self.lbl_resources_count = QLabel(self.resources.to_string())
+        self.lbl_resources_count.setStyleSheet(Style.green_text() + Style.bold())
+
+        btn_resources = QPushButton("...")
+        btn_resources.clicked.connect(self.on_btn_resources_clicked)
+        grid.addWidget(self.btn_viewer, 1, 0)
+        grid.addWidget(self.lbl_resources_count, 1, 1)
+        grid.addWidget(btn_resources, 1, 2)
+
+        self.image_frame = GImageFrame(self, Navigator(self.resources).g_image())
+        vbl0.addWidget(self.image_frame, 1)
 
         self.set_path_finder_items()
 
@@ -111,12 +116,62 @@ class GFrame(QFrame):
             self.ctrl.switch_resources()
 
     # ##### viewers #####
-    def on_btn_viewer_clicked(self):
-        navigator = Navigator(self.resources)
+    def on_btn_viewer_clicked(self, filename=None):
+        navigator = Navigator(self.resources, filename=filename)
         Viewer(self, navigator)
 
+    def set_image(self, g_image: GImage):
+        self.image_frame.set_image(g_image)
 
     def mousePressEvent(self, QMouseEvent):
         print("mouse pressed")
 
+
+# ##### ##########################################################
+class GImageFrame(QWidget):
+
+    def __init__(self, parent, g_image: GImage):
+        super().__init__(parent)
+        self.g_image = g_image
+        self.pixmap = None
+        self.setContentsMargins(0, 0, 0, 0)
+        # self.setStyleSheet("background-color:black;")
+
+        vbl0 = QVBoxLayout(self)
+        vbl0.setContentsMargins(0, 0, 0, 0)
+        vbl0.setSpacing(5)
+        self.lbl_filename = QLabel()
+        self.lbl_filename.setWordWrap(True)
+        self.lbl_filename.setTextFormat(Qt.RichText)
+        self.lbl_filename.setTextInteractionFlags(Qt.TextBrowserInteraction)
+        self.lbl_filename.setOpenExternalLinks(True)
+        self.lbl_image = ClickableLabel()
+        self.lbl_image.clicked.connect(self.on_lbl_image_clicked)
+        self.lbl_image.setMinimumSize(QSize(25, 25))
+        # initial max size
+        self.lbl_image.setMaximumSize(QSize(200, 200))
+        vbl0.addWidget(self.lbl_filename)
+        vbl0.addWidget(self.lbl_image, 1)
+
+        self.set_image(self.g_image)
+
+    def set_image(self, g_image: GImage):
+        self.g_image = g_image
+        if self.g_image is not None:
+            self.lbl_filename.setText(self.g_image.hyperlink(split=True))
+            self.pixmap = QPixmap(self.g_image.filename())
+            pixmap = self.pixmap.scaled(self.lbl_image.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.lbl_image.setPixmap(pixmap)
+            self.updateGeometry()
+
+    def resizeEvent(self, event):
+        self.lbl_image.setMaximumSize(QSize(16777215, 16777215))
+        if self.pixmap is not None:
+            height = event.size().height() - self.lbl_filename.height() - 15
+            size = QSize(event.size().width(), height)
+            pixmap = self.pixmap.scaled(size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.lbl_image.setPixmap(pixmap)
+
+    def on_lbl_image_clicked(self):
+        self.parent().on_btn_viewer_clicked(filename=self.g_image.filename())
 

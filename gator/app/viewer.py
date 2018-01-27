@@ -5,12 +5,12 @@ import subprocess
 
 import exifread
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QPixmap, QKeyEvent, QCloseEvent, QMouseEvent, QFont
+from PyQt5.QtGui import QPixmap, QKeyEvent, QCloseEvent, QMouseEvent, QFont, QKeySequence
 from PyQt5.QtWidgets import QLabel, QApplication, QWidget, QVBoxLayout, QCheckBox, QGridLayout, QPushButton, \
-    QHBoxLayout, QLayout, QMenu, QAction, qApp, QMainWindow, QFrame
+    QHBoxLayout, QLayout, QMenu, QAction, qApp
 from app.widgets import BrowserWindow
 from core.navigator import Navigator
-from gwid.util import GIcon
+from gwid.util import GIcon, GHotKey
 
 MAX_SIZE = 16777215
 MIN_SIZE = 0
@@ -66,43 +66,23 @@ class Viewer(QLabel):
             self.setPixmap(self.pixmap)
             self.resize(self.pixmap.size())
 
-            self.setWindowTitle(self.navigator.filename())
+            self.setWindowTitle(self.navigator.basename())
 
         self.sgn_viewer_changed.emit()
 
     def keyPressEvent(self, event: QKeyEvent):
-        # navigate
-        if event.key() == Qt.Key_Down:
-            self.go_file_down()
-        elif event.key() == Qt.Key_Up:
-            self.go_file_up()
-        elif event.key() == Qt.Key_Left:
-            self.go_file_left()
-        elif event.key() == Qt.Key_Right:
-            self.go_file_right()
-        # toggle max size
-        elif event.key() == Qt.Key_F1:
-            self.toggle_max_height(self.maximumHeight() == MAX_SIZE)
-            self.sgn_viewer_changed.emit()
-        elif event.key() == Qt.Key_F2:
-            self.toggle_max_width(self.maximumWidth() == MAX_SIZE)
-            self.sgn_viewer_changed.emit()
-        elif event.key() == 16777250: # Ctrl
-            self.toggle_control()
-        # G activate main window
-        elif event.key() == Qt.Key_G:
-            self.activate_main_window()
-        # X quit
-        elif event.key() == Qt.Key_X:
-            LOG.info("Quiting application")
-            qApp.quit()
+        self.ctrl.set_last_viewer(self)
+        if GHotKey.matches(event):
+            return
 
-    @staticmethod
-    def activate_main_window():
+    def activate_main_window(self):
         main_window = QApplication.instance().main_window
         main_window.showNormal()
         main_window.raise_()
         main_window.activateWindow()
+        gframe = main_window.gframe
+        gframe.set_image(self.navigator.g_image())
+        self.ctrl.set_last_viewer(self)
 
     def toggle_control(self):
         if self.view_control is None:
