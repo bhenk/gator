@@ -87,12 +87,14 @@ class Viewer(QLabel):
     def toggle_control(self):
         if self.view_control is None:
             self.view_control = ViewControl(self)
-        elif self.view_control.isHidden():
-            self.view_control.show()
-        elif self.view_control.isMinimized():
-            self.view_control.showNormal()
+        elif self.view_control.isActiveWindow():
+            self.showNormal()
+            self.raise_()
+            self.activateWindow()
         else:
-            self.view_control.hide()
+            self.view_control.showNormal()
+            self.view_control.raise_()
+            self.view_control.activateWindow()
 
     def go_file_down(self):
         self.set_file(self.navigator.go_down())

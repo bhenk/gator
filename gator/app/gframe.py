@@ -50,6 +50,7 @@ class GFrame(QFrame):
         grid.addWidget(btn_path, 0, 2)
 
         self.btn_viewer = QPushButton(self.ctrl_v.toString(0))
+        self.btn_viewer.setStyleSheet(Style.green_text())
         self.btn_viewer.setShortcut(self.ctrl_v)
         self.btn_viewer.setIcon(GIcon.viewer())
         self.btn_viewer.clicked.connect(self.on_btn_viewer_clicked)
