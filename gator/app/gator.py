@@ -1,10 +1,9 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 import logging
-from PyQt5.QtCore import Qt, QPoint
 
 from PyQt5.QtGui import QCloseEvent, QKeyEvent
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, qApp
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu
 from app.ctrl import Ctrl
 from app.gframe import GFrame
 from gwid.util import GHotKey
@@ -60,7 +59,6 @@ class WMain(QMainWindow):
         self.ctrl.config.set_main_window_x(self.pos().x())
         self.ctrl.config.set_main_window_y(self.pos().y())
         self.ctrl.config.persist()
-
 
     def closeEvent(self, event: QCloseEvent):
         self.ctrl.close()

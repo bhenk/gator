@@ -2,16 +2,16 @@
 # -*- coding: utf-8 -*-
 import logging
 import os
-from inspect import getframeinfo, currentframe
 
 from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtGui import QPixmap, QKeySequence, QMouseEvent
-from PyQt5.QtWidgets import QFrame, QApplication, QVBoxLayout, QLabel, QComboBox, QPushButton, QGridLayout, QHBoxLayout, \
-    QSizePolicy, QWidget
+from PyQt5.QtGui import QPixmap, QKeySequence
+from PyQt5.QtWidgets import QFrame, QApplication, QVBoxLayout, QLabel, QComboBox, QPushButton, QGridLayout, QWidget, \
+    QHBoxLayout
 from app.style import Style
 from app.viewer import Viewer
+from bdbs.obj import Resource
 from core.configuration import PathFinder, GatorConf
-from core.navigator import Resources, Navigator, GImage
+from core.navigator import Resources, Navigator
 from gwid.gwidget import ClickableLabel
 from gwid.listdialog import GPathListDialog
 from gwid.util import GIcon
@@ -28,6 +28,8 @@ class GFrame(QFrame):
         self.ctrl = QApplication.instance().ctrl
         self.ctrl.sgn_switch_configuration.connect(self.on_sgn_switch_configuration)
         self.ctrl.sgn_switch_resources.connect(self.on_sgn_switch_resources)
+        self.ctrl.sgn_main_window_closing.connect(self.on_main_window_closing)
+
         self.path_finder = self.ctrl.path_finder  # type: PathFinder
         self.config = self.ctrl.config  # type: GatorConf
         self.resources = self.ctrl.resources  # type: Resources
@@ -63,7 +65,8 @@ class GFrame(QFrame):
         grid.addWidget(self.lbl_resources_count, 1, 1)
         grid.addWidget(btn_resources, 1, 2)
 
-        self.image_frame = GImageFrame(self, Navigator(self.resources).g_image())
+        first_resource = Navigator(self.ctrl.store, self.resources).current_resource()
+        self.image_frame = ResourceWidget(self, first_resource, 200)
         vbl0.addWidget(self.image_frame, 1)
 
         self.set_path_finder_items()
@@ -118,25 +121,30 @@ class GFrame(QFrame):
 
     # ##### viewers #####
     def on_btn_viewer_clicked(self, filename=None):
-        navigator = Navigator(self.resources, filename=filename)
+        navigator = Navigator(self.ctrl.store, self.resources, filename=filename)
         Viewer(self, navigator)
 
-    def set_image(self, g_image: GImage):
-        self.image_frame.set_image(g_image)
+    def set_resource(self, resource: Resource):
+        self.image_frame.set_resource(resource)
+
+    def on_main_window_closing(self):
+        LOG.debug("Received signal main window closing")
 
     def mousePressEvent(self, QMouseEvent):
         print("mouse pressed")
 
 
 # ##### ##########################################################
-class GImageFrame(QWidget):
+class ResourceWidget(QWidget):
 
-    def __init__(self, parent, g_image: GImage):
+    def __init__(self, parent, resource: Resource, initial_img_size=200):
         super().__init__(parent)
-        self.g_image = g_image
+        self.ctrl = QApplication.instance().ctrl
+        self.ctrl.sgn_resource_changed.connect(self.on_resource_changed)
+
+        self.resource = resource
         self.pixmap = None
         self.setContentsMargins(0, 0, 0, 0)
-        # self.setStyleSheet("background-color:black;")
 
         vbl0 = QVBoxLayout(self)
         vbl0.setContentsMargins(0, 0, 0, 0)
@@ -150,23 +158,33 @@ class GImageFrame(QWidget):
         self.lbl_image.clicked.connect(self.on_lbl_image_clicked)
         self.lbl_image.setMinimumSize(QSize(25, 25))
         # initial max size
-        self.lbl_image.setMaximumSize(QSize(200, 200))
+        self.lbl_image.setFixedSize(QSize(initial_img_size, initial_img_size))
+        self.lbl_viewed = QLabel()
+        self.lbl_viewed.setWordWrap(True)
+
+        # hbox = QHBoxLayout()
+        # hbox.addWidget(self.lbl_image)
+        # hbox.addWidget(self.lbl_viewed)
+
         vbl0.addWidget(self.lbl_filename)
         vbl0.addWidget(self.lbl_image, 1)
+        vbl0.addWidget(self.lbl_viewed)
 
-        self.set_image(self.g_image)
+        self.set_resource(self.resource)
 
-    def set_image(self, g_image: GImage):
-        self.g_image = g_image
-        if self.g_image is not None:
-            self.lbl_filename.setText(self.g_image.hyperlink(split=True))
-            self.pixmap = QPixmap(self.g_image.filename())
+    def set_resource(self, resource: Resource):
+        self.resource = resource
+        if self.resource is not None:
+            self.lbl_filename.setText(self.resource.hyperlink(split=True))
+            self.pixmap = QPixmap(self.resource.filename())
             pixmap = self.pixmap.scaled(self.lbl_image.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.lbl_image.setPixmap(pixmap)
+            self.lbl_viewed.setText(self.resource.view_dates_as_string())
             self.updateGeometry()
 
     def resizeEvent(self, event):
         self.lbl_image.setMaximumSize(QSize(16777215, 16777215))
+        self.lbl_image.setMinimumSize(QSize(25, 25))
         if self.pixmap is not None:
             height = event.size().height() - self.lbl_filename.height() - 15
             size = QSize(event.size().width(), height)
@@ -174,5 +192,15 @@ class GImageFrame(QWidget):
             self.lbl_image.setPixmap(pixmap)
 
     def on_lbl_image_clicked(self):
-        self.parent().on_btn_viewer_clicked(filename=self.g_image.filename())
+        self.parent().on_btn_viewer_clicked(filename=self.resource.filename())
 
+    def img_heigth(self):
+        return self.lbl_image.height()
+
+    def img_width(self):
+        return self.lbl_image.width()
+
+    def on_resource_changed(self, resource: Resource):
+        if self.resource.filename() == resource.filename():
+            self.resource = resource
+            self.lbl_viewed.setText(self.resource.view_dates_as_string())

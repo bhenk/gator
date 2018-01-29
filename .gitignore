@@ -91,3 +91,5 @@ ENV/
 # editor files
 .idea/
 
+/gator/bdbs/test/store_test/
+/gator/bdbs/test/test_db/

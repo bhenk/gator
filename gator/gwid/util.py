@@ -54,6 +54,10 @@ class GHotKey():
     def matches(event: QKeyEvent):
         if event.nativeModifiers() == 1048840:
             return GHotKey.is_meta_sequence(event)
+        elif event.key() == Qt.Key_X:
+            LOG.info("Quiting application")
+            qApp.quit()
+            return True
 
         ctrl = QApplication.instance().ctrl
         if ctrl.last_viewer is not None:

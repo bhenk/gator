@@ -3,7 +3,6 @@
 import os
 import sys
 
-
 def application_home():
     if getattr(sys, 'frozen', False):
         # running in a bundle

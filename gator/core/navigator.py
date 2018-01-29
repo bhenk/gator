@@ -1,10 +1,15 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
+import logging
 import os
 import random
 
+from bdbs.obj import Resource
+from bdbs.store import Store
 from core import services
 from core.services import Format
+
+LOG = logging.getLogger(__name__)
 
 EXTENSIONS = ['.jpg', '.bmp', '.png', '.gif']
 
@@ -65,8 +70,10 @@ class Resources(object):
 
 class Navigator(object):
 
-    def __init__(self, resources=Resources(), filename=None):
+    def __init__(self, store: Store, resources=Resources(), filename=None):
+        self.__store = store
         self.__resources = resources
+        self.__max_views = self.__store.view_date_store().max_views()
         self.__size = self.__resources.resource_count()
         self.__history_list = list()
         self.__history_index = 0
@@ -77,8 +84,12 @@ class Navigator(object):
             if self.__index > -1:
                 self.__current_file = filename
         if self.__current_file is None:
-            self.__current_file = self.random_file()
+            self.__current_file = self.__random_file()
         self.__history_list.append(self.__current_file)
+        self.__current_resource = self.__create_resource()
+
+    def current_resource(self) -> Resource:
+        return self.__current_resource
 
     def current_file(self):
         return self.__current_file
@@ -89,22 +100,32 @@ class Navigator(object):
     def history_index(self):
         return self.__history_index
 
-    def random_file(self):
+    def __random_file(self):
         if self.__size > 0:
             self.__index = random.randint(0, self.__size - 1)
-            return self.__resources.get_resource(self.__index)
+            filename = self.__resources.get_resource(self.__index)
+            views = self.__store.view_date_store().count_views(filename)
+            while views > self.__max_views:
+                LOG.debug("%d views > %d max views for %s" % (views, self.__max_views, filename))
+                self.__index += 1
+                if self.__index >= self.__size:
+                    self.__max_views = self.__store.view_date_store().max_views()
+                    self.__index = 0
+                filename = self.__resources.get_resource(self.__index)
+                views = self.__store.view_date_store().count_views(filename)
+            return filename
         else:
             return None
 
     def go_down(self):
         self.__history_index += 1
         if self.__history_index > len(self.__history_list) - 1:
-            self.__current_file = self.random_file()
+            self.__current_file = self.__random_file()
             self.__history_list.append(self.__current_file)
         else:
             self.__current_file = self.__history_list[self.__history_index]
             self.__index = self.__resources.get_index(self.__current_file)
-        return self.__current_file
+        return self.__create_resource()
 
     def go_up(self):
         self.__history_index -= 1
@@ -112,7 +133,7 @@ class Navigator(object):
             self.__history_index = 0
         self.__current_file = self.__history_list[self.__history_index]
         self.__index = self.__resources.get_index(self.__current_file)
-        return self.__current_file
+        return self.__create_resource()
 
     def go_left(self):
         self.__index -= 1
@@ -121,76 +142,19 @@ class Navigator(object):
         self.__current_file = self.__resources.get_resource(self.__index)
         self.__history_index += 1
         self.__history_list.append(self.__current_file)
-        return self.__current_file
+        return self.__create_resource()
 
     def go_right(self):
         self.__index += 1
-        if self.__index > self.__size -1:
+        if self.__index >= self.__size:
             self.__index = self.__size - 1
         self.__current_file = self.__resources.get_resource(self.__index)
         self.__history_index += 1
         self.__history_list.append(self.__current_file)
-        return self.__current_file
+        return self.__create_resource()
 
-    def basename(self):
-        if self.__current_file is None:
-            return None
-        else:
-            return os.path.basename(self.__current_file)
-
-    def dir_name(self):
-        if self.__current_file is None:
-            return None
-        else:
-            return os.path.dirname(self.__current_file)
-
-    def hyperlink(self):
-        return "<a href=\"file://%s\">%s</a>" % (self.__current_file, self.basename()[:20])
-
-    def g_image(self):
-        return GImage.from_navigator(self)
-
-
-class GImage(object):
-
-    @staticmethod
-    def from_navigator(navigator: Navigator):
-        return GImage(navigator.current_file(), navigator.index(), navigator.history_index())
-
-    def __init__(self, filename, index=-1, history_index=-1):
-        self.__filename = filename
-        self.__index = index
-        self.__history_index = history_index
-
-    def filename(self):
-        return self.__filename
-
-    def index(self):
-        return self.__index
-
-    def history_index(self):
-        return self.__history_index
-
-    def basename(self):
-        if self.__filename is None:
-            return None
-        else:
-            return os.path.basename(self.__filename)
-
-    def dir_name(self):
-        if self.__filename is None:
-            return None
-        else:
-            return os.path.dirname(self.__filename)
-
-    def hyperlink(self, length=0, split=False):
-        if length > 0:
-            generator = services.chunk_string(self.__filename, length)
-            display = "\n".join(list(generator))
-        elif split:
-            display = "%s %s" % (self.dir_name(), self.basename())
-        else:
-            display = self.__filename
-        return "<a href=\"file://%s\">%s</a>" % (self.__filename, display)
-
+    def __create_resource(self) -> Resource:
+        self.__current_resource = Resource(self.__current_file, self.__index, self.__history_index)
+        self.__store.view_date_store().update(self.__current_resource)
+        return self.__current_resource
 

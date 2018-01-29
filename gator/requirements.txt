@@ -20,4 +20,5 @@
 
 pyqt5
 exifread
+bsddb3>=6.2.3
 -e .

@@ -7,6 +7,8 @@ from inspect import stack, FrameInfo
 import gwid.logs
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+from bdbs.obj import Resource
+from bdbs.store import Store
 from core import services
 from core.configuration import GatorConf, PathFinder
 from core.navigator import Resources
@@ -19,6 +21,7 @@ class Ctrl(QObject):
     sgn_main_window_closing = pyqtSignal()
     sgn_switch_configuration = pyqtSignal()
     sgn_switch_resources = pyqtSignal()
+    sgn_resource_changed = pyqtSignal(Resource)
 
     def __init__(self, gator_config: GatorConf):
         QObject.__init__(self)
@@ -31,17 +34,22 @@ class Ctrl(QObject):
         LOG.info("Gator Home   : %s" % self.gator_home)
         self.resources = Resources(self.config.resources())
         LOG.info(self.resources.to_string())
+        db_home = os.path.join(self.gator_home, "db")
+        self.store = Store(db_home)
+        LOG.info("Gator store  : %s" % self.store.repository.db_home())
 
         self.last_viewer = None
 
     def close(self):
         LOG.info("Closing Ctrl")
         self.sgn_main_window_closing.emit()
+        self.store.close()
 
     def switch_configuration(self, configuration_file: str):
         if self.configuration_file == configuration_file:
             return
         LOG.info("Switching configuration: %s" % configuration_file)
+
         self.configuration_file = os.path.abspath(configuration_file)
         self.gator_home = os.path.dirname(self.configuration_file)
         self.config = GatorConf(self.configuration_file)
@@ -52,9 +60,13 @@ class Ctrl(QObject):
         self.path_finder.insert_conditionally(0, self.configuration_file)
         self.configuration_index = self.path_finder.index(self.configuration_file)
 
+        db_home = os.path.join(self.gator_home, "db")
+        self.store = Store(db_home)
+
         self.sgn_switch_configuration.emit()
         LOG.info("Switched configuration : %s" % self.configuration_file)
         LOG.info("Gator Home             : %s" % self.gator_home)
+        LOG.info("Gator store            : %s" % self.store.repository.db_home())
         self.switch_resources()
 
     def switch_resources(self):

@@ -66,7 +66,7 @@ class AboutWidget(QWidget):
         grid.setHorizontalSpacing(2)
 
         grid.addWidget(QLabel("Version: "), 1, 1)
-        grid.addWidget(QLabel(version.__version__), 1,2)
+        grid.addWidget(QLabel(version.__version__), 1, 2)
 
         grid.addWidget(QLabel("Release: "), 2, 1)
         grid.addWidget(QLabel(version.__release_date__), 2, 2)
