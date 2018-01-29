@@ -40,6 +40,15 @@ class Resource(object):
         else:
             return os.path.dirname(self.__filename)
 
+    def short_name(self):
+        if self.__filename is None:
+            return None
+        else:
+            return os.path.splitext(self.basename())[0]
+
+    def long_name(self):
+        return "%s %s" % (self.short_name(), self.slv_index())
+
     def hyperlink(self, length=0, split=False, basename=False):
         if length > 0:
             generator = chunk_string(self.__filename, length)
@@ -65,3 +74,6 @@ class Resource(object):
 
     def count_view_dates(self):
         return len(self.__view_dates)
+
+    def slv_index(self):
+        return "sl# %s" % str(self.__index).zfill(6)

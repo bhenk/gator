@@ -105,11 +105,11 @@ class Navigator(object):
             self.__index = random.randint(0, self.__size - 1)
             filename = self.__resources.get_resource(self.__index)
             views = self.__store.view_date_store().count_views(filename)
-            while views > self.__max_views:
-                LOG.debug("%d views > %d max views for %s" % (views, self.__max_views, filename))
+            while views >= self.__max_views:
+                LOG.debug("%d views >= %d max views for %s" % (views, self.__max_views, filename))
                 self.__index += 1
                 if self.__index >= self.__size:
-                    self.__max_views = self.__store.view_date_store().max_views()
+                    self.__max_views = self.__store.view_date_store().max_views() + 1
                     self.__index = 0
                 filename = self.__resources.get_resource(self.__index)
                 views = self.__store.view_date_store().count_views(filename)

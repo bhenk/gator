@@ -8,6 +8,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QPixmap, QKeyEvent, QCloseEvent, QMouseEvent, QFont
 from PyQt5.QtWidgets import QLabel, QApplication, QWidget, QVBoxLayout, QCheckBox, QGridLayout, QPushButton, \
     QHBoxLayout, QLayout, QMenu, QAction
+from app.style import Style
 from app.widgets import BrowserWindow
 from bdbs.obj import Resource
 from core.navigator import Navigator
@@ -68,7 +69,7 @@ class Viewer(QLabel):
             self.setPixmap(self.pixmap)
             self.resize(self.pixmap.size())
 
-            self.setWindowTitle(self.current_resource.basename())
+            self.setWindowTitle(self.current_resource.long_name())
             self.ctrl.store.view_date_store().set_viewed(self.current_resource)
             self.ctrl.sgn_resource_changed.emit(self.current_resource)
         self.sgn_viewer_changed.emit()
@@ -218,6 +219,7 @@ class ViewControl(QWidget):
     def on_viewer_changed(self):
         self.lbl_current_file.setText(self.viewer.current_resource.hyperlink(basename=True))
         self.lbl_current_file.setToolTip(self.viewer.current_resource.filename())
+        self.setWindowTitle(self.viewer.current_resource.slv_index())
         self.lbl_history_index.setText(str(self.viewer.current_resource.history_index()))
         self.toggle_max_height.setChecked(self.viewer.maximumHeight() != MAX_SIZE)
         self.toggle_max_width.setChecked(self.viewer.maximumWidth() != MAX_SIZE)

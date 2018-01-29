@@ -4,6 +4,8 @@ import logging
 import unittest
 
 import sys
+
+import os
 from bdbs.obj import Resource
 from bdbs.store import Store
 
@@ -56,17 +58,6 @@ class TestViewDateStore(unittest.TestCase):
                 print(resource.count_view_dates(), resource.filename())
         print("max views", vds.max_views())
 
-
-
     def test_set_viewed(self):
-        r1 = Resource("1")
-        r2 = Resource("2")
-        r3 = Resource("3")
-        vds = self.store.view_date_store()
-
-        vds.set_viewed(r1)
-        vds.set_viewed(r2)
-        vds.set_viewed(r3)
-
-        for item in vds.bdb.items_decoded():
-            print(item)
+        print(os.path.split("bla.txt"))
+        print(os.path.splitext("bla.tst")[0])
