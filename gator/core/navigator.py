@@ -3,11 +3,11 @@
 import logging
 import os
 import random
+from statistics import median_low, median
 
 from bdbs.obj import Resource
 from bdbs.store import Store
-from core import services
-from core.services import Format
+from core.services import Format, Stat
 
 LOG = logging.getLogger(__name__)
 
@@ -73,8 +73,9 @@ class Navigator(object):
     def __init__(self, store: Store, resources=Resources(), filename=None):
         self.__store = store
         self.__resources = resources
-        self.__max_views = self.__store.view_date_store().max_dates() -1
         self.__size = self.__resources.resource_count()
+        self.__min_views = self.stat_view_count().min()
+        LOG.info("navigator min views = %d" % self.__min_views)
         self.__history_list = list()
         self.__history_index = 0
         self.__index = -1
@@ -94,6 +95,13 @@ class Navigator(object):
     def current_file(self):
         return self.__current_file
 
+    def current_min_views(self):
+        return self.__min_views
+
+    def stat_view_count(self)-> Stat:
+        sequence = self.__store.view_date_store().sequence_count(total=self.__size)
+        return Stat(sequence)
+
     def index(self):
         return self.__index
 
@@ -105,12 +113,16 @@ class Navigator(object):
             self.__index = random.randint(0, self.__size - 1)
             filename = self.__resources.get_resource(self.__index)
             views = self.__store.view_date_store().count_dates(filename)
-            while views >= self.__max_views:
-                LOG.debug("%d views >= %d max views for %s" % (views, self.__max_views, filename))
+            while views > self.__min_views:
+                LOG.debug("%d views > %d min views for %s" % (views, self.__min_views, filename))
                 self.__index += 1
                 if self.__index >= self.__size:
-                    self.__max_views = self.__store.view_date_store().max_dates() + 1
                     self.__index = 0
+                    LOG.debug("Recalculating min views")
+                    minimal_views = self.stat_view_count().min()
+                    if minimal_views != self.__min_views:
+                        LOG.info("Adjusting min views to %d" % minimal_views)
+                    self.__min_views = minimal_views
                 filename = self.__resources.get_resource(self.__index)
                 views = self.__store.view_date_store().count_dates(filename)
             return filename

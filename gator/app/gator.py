@@ -54,13 +54,16 @@ class WMain(QMainWindow):
 
     def close(self):
         LOG.debug("Main window is closing")
+        self.ctrl.close()
         self.ctrl.config.set_main_window_height(self.height())
         self.ctrl.config.set_main_window_width(self.width())
         self.ctrl.config.set_main_window_x(self.pos().x())
         self.ctrl.config.set_main_window_y(self.pos().y())
+        LOG.debug("##### Persist configuration @ %s" % self.ctrl.config.config_file())
         self.ctrl.config.persist()
 
     def closeEvent(self, event: QCloseEvent):
+        LOG.debug("Main window close event")
         self.ctrl.close()
         event.accept()
 

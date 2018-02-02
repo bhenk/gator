@@ -242,6 +242,13 @@ class GatorConf(Configuration):
         self.__set_int__(GatorConf.SECTION_WINDOW, "viewer_window_y", y_pos)
 
     # ----------------------------------------------------
+    def viewer_scale_screen_size(self, fallback=False):
+        return self.__get_boolean__(GatorConf.SECTION_WINDOW, "viewer_scale_screen_size", fallback=fallback)
+
+    def set_viewer_scale_screen_size(self, checked):
+        self.__set_boolean__(GatorConf.SECTION_WINDOW, "viewer_scale_screen_size", checked)
+
+    # ----------------------------------------------------
     def viewer_control_window_x(self, fallback=0):
         return self.__get_int__(GatorConf.SECTION_WINDOW, "viewer_control_window_x", fallback=fallback)
 

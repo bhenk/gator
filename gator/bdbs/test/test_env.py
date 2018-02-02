@@ -1,9 +1,8 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 import logging
-import unittest
-
 import sys
+import unittest
 from datetime import datetime
 
 from bdbs.env import Repository

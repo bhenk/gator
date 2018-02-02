@@ -11,6 +11,10 @@ from PyQt5.QtWidgets import qApp, QApplication
 LOG = logging.getLogger(__name__)
 
 
+def default_file_name() -> str:
+    return pkg_resources.resource_filename(__name__, "img/photography.png")
+
+
 def icon(filename):
     path = pkg_resources.resource_filename(__name__, filename)
     if not os.path.exists(path):

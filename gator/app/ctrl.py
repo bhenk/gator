@@ -26,7 +26,7 @@ class Ctrl(QObject):
     def __init__(self, gator_config: GatorConf):
         QObject.__init__(self)
         self.path_finder = PathFinder()
-        self.config = gator_config
+        self.config = gator_config  # type: GatorConf
         self.configuration_file = self.config.config_file()
         self.gator_home = os.path.dirname(self.configuration_file)
         self.configuration_index = self.path_finder.index(self.configuration_file)
@@ -39,11 +39,14 @@ class Ctrl(QObject):
         LOG.info("Gator store  : %s" % self.store.repository.db_home())
 
         self.last_viewer = None
+        self.is_closing = False
 
     def close(self):
-        LOG.info("Closing Ctrl")
-        self.sgn_main_window_closing.emit()
-        self.store.close()
+        if not self.is_closing:
+            self.is_closing = True
+            LOG.info("Closing Ctrl")
+            self.sgn_main_window_closing.emit()
+            self.store.close()
 
     def switch_configuration(self, configuration_file: str):
         if self.configuration_file == configuration_file:

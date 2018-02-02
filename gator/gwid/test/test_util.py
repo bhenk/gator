@@ -4,8 +4,6 @@ import unittest
 
 from inspect import stack
 
-import sys
-
 
 class TestLocale(unittest.TestCase):
 

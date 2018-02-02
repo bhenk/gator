@@ -7,11 +7,13 @@ import exifread
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QPixmap, QKeyEvent, QCloseEvent, QMouseEvent, QFont
 from PyQt5.QtWidgets import QLabel, QApplication, QWidget, QVBoxLayout, QCheckBox, QGridLayout, QPushButton, \
-    QHBoxLayout, QLayout, QMenu, QAction
+    QHBoxLayout, QLayout, QMenu, QAction, QFrame
 from app.style import Style
 from app.widgets import BrowserWindow
 from bdbs.obj import Resource
 from core.navigator import Navigator
+from core.services import Format
+from gwid.gwidget import StatView
 from gwid.util import GIcon, GHotKey
 
 MAX_SIZE = 16777215
@@ -22,15 +24,17 @@ LOG = logging.getLogger(__name__)
 
 class Viewer(QLabel):
 
-    sgn_resource_changed = pyqtSignal()
+    sgn_resource_changed = pyqtSignal(Resource)
 
     def __init__(self, parent, navigator):
         QLabel.__init__(self)
         self.parent = parent
         self.navigator = navigator  # type: Navigator
         self.ctrl = QApplication.instance().ctrl
-        self.ctrl.sgn_main_window_closing.connect(self.close)
+        self.ctrl.sgn_main_window_closing.connect(self.on_main_window_closing)
         self.ctrl.sgn_switch_resources.connect(self.on_sgn_switch_resources)
+
+        self.scale_screen_size = self.ctrl.config.viewer_scale_screen_size()
 
         self.setMinimumWidth(100)
         self.setMinimumHeight(100)
@@ -66,13 +70,21 @@ class Viewer(QLabel):
         else:
             self.current_resource = resource
             self.pixmap = pixmap
-            self.setPixmap(self.pixmap)
-            self.resize(self.pixmap.size())
+            if self.scale_screen_size:
+                rect = QApplication.desktop().screenGeometry()
+                max_height = rect.height() - self.pos().y() - 50
+                max_width = rect.width() - self.pos().x() - 5
+                pixmap_scaled = self.pixmap.scaled(max_width, max_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                self.setPixmap(pixmap_scaled)
+                self.resize(pixmap_scaled.size())
+            else:
+                self.setPixmap(self.pixmap)
+                self.resize(self.pixmap.size())
 
             self.setWindowTitle(self.current_resource.long_name())
             self.ctrl.store.view_date_store().add_date_on(self.current_resource)
             self.ctrl.sgn_resource_changed.emit(self.current_resource)
-        self.sgn_resource_changed.emit()
+        self.sgn_resource_changed.emit(self.current_resource)
 
     def keyPressEvent(self, event: QKeyEvent):
         self.ctrl.set_last_viewer(self)
@@ -81,6 +93,7 @@ class Viewer(QLabel):
         elif event.nativeModifiers() == 1048840:
             if event.key() == Qt.Key_A:  # Ctrl+Acme
                 self.ctrl.store.acme_date_store().add_date_on(self.current_resource)
+                self.sgn_resource_changed.emit(self.current_resource)
 
     def activate_main_window(self):
         main_window = QApplication.instance().main_window
@@ -112,6 +125,10 @@ class Viewer(QLabel):
 
     def go_file_right(self):
         self.set_resource(self.navigator.go_right())
+
+    def toggle_scale_screen_size(self, checked):
+        self.scale_screen_size = checked
+        self.set_resource(self.current_resource)
 
     def toggle_max_height(self, checked):
         if checked:
@@ -145,13 +162,27 @@ class Viewer(QLabel):
         if event.button() == Qt.RightButton:
             self.popup.popup(event.globalPos())
 
+    def on_main_window_closing(self):
+        LOG.debug("Received signal main window closing")
+        self.close()
+
+    def close(self):
+        LOG.debug("Closing %s" % self.__class__.__name__)
+        super().close()
+
     def closeEvent(self, event: QCloseEvent):
+        LOG.debug("Close event on %s" % self.__class__.__name__)
+        self.persist()
+        event.accept()
+
+    def persist(self):
         if self.view_control is not None:
             self.view_control.close()
-        LOG.debug("Close event on Viewer")
+        LOG.debug("Persist viewer position")
         self.ctrl.config.set_viewer_window_x(self.pos().x())
         self.ctrl.config.set_viewer_window_y(self.pos().y())
-        event.accept()
+        self.ctrl.config.set_viewer_scale_screen_size(self.scale_screen_size)
+        self.close()
 
 
 class ViewControl(QWidget):
@@ -188,12 +219,33 @@ class ViewControl(QWidget):
         self.lbl_view_dates.setWordWrap(True)
         vbl_0.addWidget(self.lbl_view_dates)
 
-        self.toggle_max_height = QCheckBox("fixed max height (F1)", self)
-        self.toggle_max_height.toggled.connect(self.viewer.toggle_max_height)
+        # Navigator items
+        navigator_line = QFrame()
+        navigator_line.setFrameShape(QFrame.HLine)
+        navigator_line.setFrameShadow(QFrame.Sunken)
+        vbl_0.addWidget(navigator_line)
+
+        self.stat_view_views = StatView(parent=self, title="View stats", decimals=4)
+        self.stat_view_views.setMaximumSize(self.max_width, 155)
+        vbl_0.addWidget(self.stat_view_views)
+
+        # Navigate
+        navigate_line = QFrame()
+        navigate_line.setFrameShape(QFrame.HLine)
+        navigate_line.setFrameShadow(QFrame.Sunken)
+        vbl_0.addWidget(navigate_line)
+
+        self.toggle_scale_screen_size = QCheckBox("scale screen size")
+        self.toggle_scale_screen_size.setChecked(self.viewer.scale_screen_size)
+        self.toggle_scale_screen_size.toggled.connect(self.on_toggle_screen_size)
+        vbl_0.addWidget(self.toggle_scale_screen_size)
+
+        self.toggle_max_height = QCheckBox("fixed max height", self)
+        self.toggle_max_height.toggled.connect(self.on_toggle_max_height)
         vbl_0.addWidget(self.toggle_max_height)
 
-        self.toggle_max_width = QCheckBox("fixed max width (F2)", self)
-        self.toggle_max_width.toggled.connect(self.viewer.toggle_max_width)
+        self.toggle_max_width = QCheckBox("fixed max width", self)
+        self.toggle_max_width.toggled.connect(self.on_toggle_max_width)
         vbl_0.addWidget(self.toggle_max_width)
 
         grid = QGridLayout()
@@ -229,7 +281,7 @@ class ViewControl(QWidget):
         vbl_0.addLayout(hbox)
 
         self.viewer.sgn_resource_changed.connect(self.on_resource_changed)
-        self.on_resource_changed()
+        self.on_resource_changed(self.viewer.current_resource)
 
         self.move(self.ctrl.config.viewer_control_window_x(), self.ctrl.config.viewer_control_window_y())
         self.show()
@@ -237,7 +289,7 @@ class ViewControl(QWidget):
     def keyPressEvent(self, event: QKeyEvent):
         self.viewer.keyPressEvent(event)
 
-    def on_resource_changed(self):
+    def on_resource_changed(self, resource: Resource):
         self.setWindowTitle(self.viewer.current_resource.basename())
         self.lbl_current_resource.setText(self.viewer.current_resource.hyperlink(slv_index=True))
         self.lbl_current_resource.setToolTip(self.viewer.current_resource.filename())
@@ -247,13 +299,29 @@ class ViewControl(QWidget):
         self.lbl_current_image.setToolTip(self.viewer.current_resource.filename())
 
         self.lbl_acme_dates.setVisible(self.viewer.current_resource.count_acme_dates() > 0)
-        self.lbl_acme_dates.setText(self.viewer.current_resource.acm_dates_as_string())
+        self.lbl_acme_dates.setText("\n".join(self.viewer.current_resource.acme_dates(fmt=Format.DATE_FULL)))
 
-        self.lbl_view_dates.setText(self.viewer.current_resource.view_dates_as_string())
+        self.lbl_view_dates.setText("\n".join(self.viewer.current_resource.view_dates(fmt=Format.DATE_FULL)))
+
+        stat = self.viewer.navigator.stat_view_count()
+        self.stat_view_views.set_stat(stat)
 
         self.lbl_history_index.setText(str(self.viewer.current_resource.history_index()))
         self.toggle_max_height.setChecked(self.viewer.maximumHeight() != MAX_SIZE)
         self.toggle_max_width.setChecked(self.viewer.maximumWidth() != MAX_SIZE)
+
+    def on_toggle_screen_size(self, checked):
+        self.viewer.toggle_scale_screen_size(checked)
+
+    def on_toggle_max_width(self, checked):
+        self.viewer.toggle_max_width(checked)
+        self.toggle_scale_screen_size.setEnabled(
+            not (self.toggle_max_height.isChecked() or self.toggle_max_width.isChecked()))
+
+    def on_toggle_max_height(self, checked):
+        self.viewer.toggle_max_height(checked)
+        self.toggle_scale_screen_size.setEnabled(
+            not (self.toggle_max_height.isChecked() or self.toggle_max_width.isChecked()))
 
     def closeEvent(self, event: QCloseEvent):
         LOG.debug("Close event on Viewer Control")
@@ -292,7 +360,7 @@ class ViewerPopup(QMenu):
         action_close.triggered.connect(viewer.close)
         self.addAction(action_close)
 
-    def on_resource_changed(self):
+    def on_resource_changed(self, resource: Resource):
         file_enabled = self.viewer.current_resource is not None
         self.action_preview.setEnabled(file_enabled)
         self.action_copy_filename.setEnabled(file_enabled)

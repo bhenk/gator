@@ -5,13 +5,13 @@ import os
 
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QPixmap, QKeySequence
-from PyQt5.QtWidgets import QFrame, QApplication, QVBoxLayout, QLabel, QComboBox, QPushButton, QGridLayout, QWidget, \
-    QHBoxLayout
+from PyQt5.QtWidgets import QFrame, QApplication, QVBoxLayout, QLabel, QComboBox, QPushButton, QGridLayout, QWidget
 from app.style import Style
 from app.viewer import Viewer
 from bdbs.obj import Resource
 from core.configuration import PathFinder, GatorConf
 from core.navigator import Resources, Navigator
+from core.services import Format
 from gwid.gwidget import ClickableLabel
 from gwid.listdialog import GPathListDialog
 from gwid.util import GIcon
@@ -181,7 +181,7 @@ class ResourceWidget(QWidget):
             self.pixmap = QPixmap(self.resource.filename())
             pixmap = self.pixmap.scaled(self.lbl_image.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.lbl_image.setPixmap(pixmap)
-            self.lbl_viewed.setText(self.resource.view_dates_as_string())
+            self.lbl_viewed.setText(" | ".join(self.resource.view_dates(fmt=Format.DATE_FULL)))
             self.updateGeometry()
 
     def resizeEvent(self, event):
@@ -205,4 +205,4 @@ class ResourceWidget(QWidget):
     def on_resource_changed(self, resource: Resource):
         if self.resource.filename() == resource.filename():
             self.resource = resource
-            self.lbl_viewed.setText(self.resource.view_dates_as_string())
+            self.lbl_viewed.setText(" | ".join(self.resource.view_dates(fmt=Format.DATE_FULL)))

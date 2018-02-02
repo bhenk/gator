@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 import os
-from datetime import datetime
 
 
 def chunk_string(string, length):
@@ -10,7 +9,14 @@ def chunk_string(string, length):
 
 class Resource(object):
 
-    def __init__(self, filename, index=-1, history_index=-1):
+    @staticmethod
+    def dates_formatted(date_list, fmt=None):
+        if fmt:
+            return [dt.strftime(fmt) for dt in date_list]
+        else:
+            return date_list
+
+    def __init__(self, filename=None, index=-1, history_index=-1):
         self.__filename = filename
         self.__index = index
         self.__history_index = history_index
@@ -30,25 +36,16 @@ class Resource(object):
         return self.__filename is not None
 
     def basename(self):
-        if self.__filename is None:
-            return None
-        else:
-            return os.path.basename(self.__filename)
+        return None if self.__filename is None else os.path.basename(self.__filename)
 
     def dir_name(self):
-        if self.__filename is None:
-            return None
-        else:
-            return os.path.dirname(self.__filename)
+        return None if self.__filename is None else os.path.dirname(self.__filename)
 
     def short_name(self):
-        if self.__filename is None:
-            return None
-        else:
-            return os.path.splitext(self.basename())[0]
+        return None if self.__filename is None else os.path.splitext(self.basename())[0]
 
     def long_name(self):
-        return "%s %s" % (self.short_name(), self.slv_index())
+        return None if self.__filename is None else "%s %s" % (self.short_name(), self.slv_index())
 
     def hyperlink(self, length=0, split=False, basename=False, slv_index=False):
         if length > 0:
@@ -68,12 +65,7 @@ class Resource(object):
         self.__view_dates = view_dates
 
     def view_dates(self, fmt=None):
-        if fmt:
-            return [dt.strftime(fmt) for dt in self.__view_dates]
-        return self.__view_dates
-
-    def view_dates_as_string(self):
-        return "\n".join(self.view_dates("%Y-%m-%d %H:%M:%S"))
+        return self.dates_formatted( self.__view_dates, fmt)
 
     def count_view_dates(self):
         return len(self.__view_dates)
@@ -82,15 +74,10 @@ class Resource(object):
         self.__acme_dates = acme_dates
 
     def acme_dates(self, fmt=None):
-        if fmt:
-            return [dt.strftime(fmt) for dt in self.__acme_dates]
-        return self.__acme_dates
-
-    def acm_dates_as_string(self):
-        return "\n".join(self.acme_dates("%Y-%m-%d %H:%M:%S"))
+        return self.dates_formatted(self.__acme_dates, fmt)
 
     def count_acme_dates(self):
         return len(self.__acme_dates)
 
     def slv_index(self):
-        return "sl# %s" % str(self.__index).zfill(6)
+        return None if self.__index < 0 else "sl# %s" % str(self.__index).zfill(6)

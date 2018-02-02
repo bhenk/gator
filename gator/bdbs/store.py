@@ -15,8 +15,10 @@ DATE_FORMAT = "%Y%m%d%H%M%S"
 
 class DateStore(object):
 
-    def __init__(self, bdb: BDB):
+    def __init__(self, bdb: BDB, add_once=True):
         self.bdb = bdb
+        self.__add_once = add_once
+        self.__dated_set = set()
 
     @abstractmethod
     def get_dates(self, resource: Resource) -> list:
@@ -27,12 +29,15 @@ class DateStore(object):
         raise NotImplementedError
 
     def add_date_on(self, resource: Resource):
-        new_date_str = datetime.today().strftime(DATE_FORMAT)
-        date_str = self.bdb.get(resource.filename())
-        date_str = new_date_str if date_str is None else "%s%s%s" % (date_str, env.LIST_SEP, new_date_str)
-        self.bdb.put(resource.filename(), date_str)
-        date_list = [datetime.strptime(string, DATE_FORMAT) for string in date_str.split(env.LIST_SEP)]
-        self.set_dates(resource, date_list)
+        if not(resource.filename() in self.__dated_set and self.__add_once):
+            new_date_str = datetime.today().strftime(DATE_FORMAT)
+            date_str = self.bdb.get(resource.filename())
+            date_str = new_date_str if date_str is None else "%s%s%s" % (date_str, env.LIST_SEP, new_date_str)
+            self.bdb.put(resource.filename(), date_str)
+            date_list = [datetime.strptime(string, DATE_FORMAT) for string in date_str.split(env.LIST_SEP)]
+            self.set_dates(resource, date_list)
+            self.__dated_set.add(resource.filename())
+            LOG.debug("Set %s #%d on %s" % (self.__class__.__name__[:-5], len(date_list), resource.filename()))
 
     def update(self, resource: Resource):
         self.set_dates(resource, self.get_dates_for(resource))
@@ -50,37 +55,19 @@ class DateStore(object):
                 yield resource
         return generator
 
-    def max_dates(self) -> int:
-        max_dates = 0
+    def sequence_count(self, total=0):
+        sequence = []
         for value in self.bdb.values_decoded():
             date_count = len(value.split(env.LIST_SEP))
-            max_dates = max(max_dates, date_count)
-        return  max_dates
+            sequence.append(date_count)
+        x = len(sequence)
+        if total > x:
+            sequence.extend([0] * (total - x))
+        return sequence
 
     def count_dates(self, filename):
         dates = self.bdb.get(filename)
         return 0 if dates is None else len(dates.split(env.LIST_SEP))
-
-
-class ViewDateStore(DateStore):
-
-    def __init__(self, bdb: BDB):
-        DateStore.__init__(self, bdb)
-        self.__list_viewed = []
-
-    def get_dates(self, resource: Resource) -> list:
-        return resource.view_dates()
-
-    def set_dates(self, resource: Resource, date_list: list):
-        resource.set_view_dates(date_list)
-
-    def add_date_on(self, resource: Resource):
-        if resource.filename() in self.__list_viewed:
-            return
-        else:
-            super().add_date_on(resource)
-            self.__list_viewed.append(resource.filename())
-            LOG.debug("Set view date #%d on %s" % (resource.count_view_dates(), resource.filename()))
 
 
 class AcmeDateStore(DateStore):
@@ -91,9 +78,14 @@ class AcmeDateStore(DateStore):
     def set_dates(self, resource: Resource, date_list: list):
         resource.set_acme_dates(date_list)
 
-    def add_date_on(self, resource: Resource):
-        super().add_date_on(resource)
-        LOG.debug("Set acme date #%d on %s" % (resource.count_acme_dates(), resource.filename()))
+
+class ViewDateStore(DateStore):
+
+    def get_dates(self, resource: Resource) -> list:
+        return resource.view_dates()
+
+    def set_dates(self, resource: Resource, date_list: list):
+        resource.set_view_dates(date_list)
 
 
 class Store(object):
