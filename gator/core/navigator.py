@@ -73,7 +73,7 @@ class Navigator(object):
     def __init__(self, store: Store, resources=Resources(), filename=None):
         self.__store = store
         self.__resources = resources
-        self.__max_views = self.__store.view_date_store().max_views()
+        self.__max_views = self.__store.view_date_store().max_dates() -1
         self.__size = self.__resources.resource_count()
         self.__history_list = list()
         self.__history_index = 0
@@ -104,15 +104,15 @@ class Navigator(object):
         if self.__size > 0:
             self.__index = random.randint(0, self.__size - 1)
             filename = self.__resources.get_resource(self.__index)
-            views = self.__store.view_date_store().count_views(filename)
+            views = self.__store.view_date_store().count_dates(filename)
             while views >= self.__max_views:
                 LOG.debug("%d views >= %d max views for %s" % (views, self.__max_views, filename))
                 self.__index += 1
                 if self.__index >= self.__size:
-                    self.__max_views = self.__store.view_date_store().max_views() + 1
+                    self.__max_views = self.__store.view_date_store().max_dates() + 1
                     self.__index = 0
                 filename = self.__resources.get_resource(self.__index)
-                views = self.__store.view_date_store().count_views(filename)
+                views = self.__store.view_date_store().count_dates(filename)
             return filename
         else:
             return None
@@ -155,6 +155,7 @@ class Navigator(object):
 
     def __create_resource(self) -> Resource:
         self.__current_resource = Resource(self.__current_file, self.__index, self.__history_index)
+        self.__store.acme_date_store().update(self.__current_resource)
         self.__store.view_date_store().update(self.__current_resource)
         return self.__current_resource
 

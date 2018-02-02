@@ -18,6 +18,8 @@ from gwid.util import GIcon
 
 LOG = logging.getLogger(__name__)
 
+MAX_SIZE = 16777215
+
 
 class GFrame(QFrame):
 
@@ -183,7 +185,7 @@ class ResourceWidget(QWidget):
             self.updateGeometry()
 
     def resizeEvent(self, event):
-        self.lbl_image.setMaximumSize(QSize(16777215, 16777215))
+        self.lbl_image.setMaximumSize(QSize(MAX_SIZE, MAX_SIZE))
         self.lbl_image.setMinimumSize(QSize(25, 25))
         if self.pixmap is not None:
             height = event.size().height() - self.lbl_filename.height() - 15

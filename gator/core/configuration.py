@@ -241,3 +241,17 @@ class GatorConf(Configuration):
     def set_viewer_window_y(self, y_pos):
         self.__set_int__(GatorConf.SECTION_WINDOW, "viewer_window_y", y_pos)
 
+    # ----------------------------------------------------
+    def viewer_control_window_x(self, fallback=0):
+        return self.__get_int__(GatorConf.SECTION_WINDOW, "viewer_control_window_x", fallback=fallback)
+
+    def set_viewer_control_window_x(self, x_pos):
+        self.__set_int__(GatorConf.SECTION_WINDOW, "viewer_control_window_x", x_pos)
+
+    def viewer_control_window_y(self, fallback=0):
+        return self.__get_int__(GatorConf.SECTION_WINDOW, "viewer_control_window_y", fallback=fallback)
+
+    def set_viewer_control_window_y(self, y_pos):
+        self.__set_int__(GatorConf.SECTION_WINDOW, "viewer_controL_window_y", y_pos)
+
+

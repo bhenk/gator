@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 import logging
+from abc import abstractmethod
 from datetime import datetime
 
 from bdbs import env
@@ -12,52 +13,87 @@ LOG = logging.getLogger(__name__)
 DATE_FORMAT = "%Y%m%d%H%M%S"
 
 
-class ViewDateStore(object):
+class DateStore(object):
 
     def __init__(self, bdb: BDB):
         self.bdb = bdb
-        self.__list_viewed = []
 
-    def set_viewed(self, resource: Resource):
-        if resource.filename() not in self.__list_viewed:
-            vd_strings = self.bdb.get_list(resource.filename(), default=list())
-            vd_strings.append(datetime.today().strftime(DATE_FORMAT))
-            self.bdb.put_list(resource.filename(), vd_strings)
-            vd = [datetime.strptime(string, DATE_FORMAT) for string in vd_strings]
-            resource.set_view_dates(vd)
-            self.__list_viewed.append(resource.filename())
-            LOG.debug("Set view date on %s" % resource.filename())
+    @abstractmethod
+    def get_dates(self, resource: Resource) -> list:
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_dates(self, resource: Resource, date_list: list):
+        raise NotImplementedError
+
+    def add_date_on(self, resource: Resource):
+        new_date_str = datetime.today().strftime(DATE_FORMAT)
+        date_str = self.bdb.get(resource.filename())
+        date_str = new_date_str if date_str is None else "%s%s%s" % (date_str, env.LIST_SEP, new_date_str)
+        self.bdb.put(resource.filename(), date_str)
+        date_list = [datetime.strptime(string, DATE_FORMAT) for string in date_str.split(env.LIST_SEP)]
+        self.set_dates(resource, date_list)
 
     def update(self, resource: Resource):
-        vd_strings = self.bdb.get_list(resource.filename(), default=list())
-        vd = [datetime.strptime(string, DATE_FORMAT) for string in vd_strings]
-        resource.set_view_dates(vd)
+        self.set_dates(resource, self.get_dates_for(resource))
 
-    def get(self, resource: Resource):
-        vd_strings = self.bdb.get_list(resource.filename())
-        return [datetime.strptime(string, DATE_FORMAT) for string in vd_strings]
+    def get_dates_for(self, resource: Resource) -> list:
+        date_str_list = self.bdb.get_list(resource.filename(), default=list())
+        return [datetime.strptime(string, DATE_FORMAT) for string in date_str_list]
 
     def resource_generator(self) -> iter:
-
         def generator() -> Resource:
             for item in self.bdb.items_decoded():
                 resource = Resource(item[0])
-                vd = [datetime.strptime(string, DATE_FORMAT) for string in item[1].split(env.LIST_SEP)]
-                resource.set_view_dates(vd)
+                date_list = [datetime.strptime(string, DATE_FORMAT) for string in item[1].split(env.LIST_SEP)]
+                self.set_dates(resource, date_list)
                 yield resource
-
         return generator
 
-    def max_views(self) -> int:
-        max_views = 0
+    def max_dates(self) -> int:
+        max_dates = 0
         for value in self.bdb.values_decoded():
-            views = len(value.split(env.LIST_SEP))
-            max_views = max(max_views, views)
-        return max_views
+            date_count = len(value.split(env.LIST_SEP))
+            max_dates = max(max_dates, date_count)
+        return  max_dates
 
-    def count_views(self, filename):
-        value = self.bdb.get(filename)
-        return 0 if value is None else len(value.split(env.LIST_SEP))
+    def count_dates(self, filename):
+        dates = self.bdb.get(filename)
+        return 0 if dates is None else len(dates.split(env.LIST_SEP))
+
+
+class ViewDateStore(DateStore):
+
+    def __init__(self, bdb: BDB):
+        DateStore.__init__(self, bdb)
+        self.__list_viewed = []
+
+    def get_dates(self, resource: Resource) -> list:
+        return resource.view_dates()
+
+    def set_dates(self, resource: Resource, date_list: list):
+        resource.set_view_dates(date_list)
+
+    def add_date_on(self, resource: Resource):
+        if resource.filename() in self.__list_viewed:
+            return
+        else:
+            super().add_date_on(resource)
+            self.__list_viewed.append(resource.filename())
+            LOG.debug("Set view date #%d on %s" % (resource.count_view_dates(), resource.filename()))
+
+
+class AcmeDateStore(DateStore):
+
+    def get_dates(self, resource: Resource) -> list:
+        return resource.acme_dates()
+
+    def set_dates(self, resource: Resource, date_list: list):
+        resource.set_acme_dates(date_list)
+
+    def add_date_on(self, resource: Resource):
+        super().add_date_on(resource)
+        LOG.debug("Set acme date #%d on %s" % (resource.count_acme_dates(), resource.filename()))
 
 
 class Store(object):
@@ -69,8 +105,15 @@ class Store(object):
     def view_date_store(self) -> ViewDateStore:
         filename = "store/%s.bdb" % ViewDateStore.__name__.lower()
         if filename not in self.stores:
-            vds = ViewDateStore(self.repository.bdb(filename))
+            vds = ViewDateStore(self.repository.bdb(filename, cache=False))
             self.stores[filename] = vds
+        return self.stores[filename]
+
+    def acme_date_store(self) -> AcmeDateStore:
+        filename = "store/%s.bdb" % AcmeDateStore.__name__.lower()
+        if filename not in self.stores:
+            ads = AcmeDateStore(self.repository.bdb(filename, cache=False))
+            self.stores[filename] = ads
         return self.stores[filename]
 
     def close(self):

@@ -88,13 +88,16 @@ class Repository(object):
     def db_env(self) -> DBEnv:
         return self.__db_env
 
-    def bdb(self, filename) -> BDB:
+    def bdb(self, filename, cache=True) -> BDB:
         if filename not in self.__databases:
             os.makedirs(os.path.dirname(os.path.join(self.__db_home, filename)), exist_ok=True)
             bdb = BDB(self.__db_env)
             bdb.open(filename, None, db.DB_BTREE, db.DB_CREATE)
-            self.__databases[filename] = bdb
-        return self.__databases[filename]
+            if cache:
+                self.__databases[filename] = bdb
+        else:
+            bdb = self.__databases[filename]
+        return bdb
 
     def close(self):
         self.__db_env.close(db.DB_FORCESYNC)

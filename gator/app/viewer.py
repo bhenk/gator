@@ -22,7 +22,7 @@ LOG = logging.getLogger(__name__)
 
 class Viewer(QLabel):
 
-    sgn_viewer_changed = pyqtSignal()
+    sgn_resource_changed = pyqtSignal()
 
     def __init__(self, parent, navigator):
         QLabel.__init__(self)
@@ -43,7 +43,7 @@ class Viewer(QLabel):
         self.current_resource = None  # type: Resource
         self.set_resource(self.navigator.current_resource())
 
-        self.view_control = None
+        self.view_control = ViewControl(self)
 
         self.move(self.ctrl.config.viewer_window_x(), self.ctrl.config.viewer_window_y())
         self.show()
@@ -70,14 +70,17 @@ class Viewer(QLabel):
             self.resize(self.pixmap.size())
 
             self.setWindowTitle(self.current_resource.long_name())
-            self.ctrl.store.view_date_store().set_viewed(self.current_resource)
+            self.ctrl.store.view_date_store().add_date_on(self.current_resource)
             self.ctrl.sgn_resource_changed.emit(self.current_resource)
-        self.sgn_viewer_changed.emit()
+        self.sgn_resource_changed.emit()
 
     def keyPressEvent(self, event: QKeyEvent):
         self.ctrl.set_last_viewer(self)
         if GHotKey.matches(event):
             return
+        elif event.nativeModifiers() == 1048840:
+            if event.key() == Qt.Key_A:  # Ctrl+Acme
+                self.ctrl.store.acme_date_store().add_date_on(self.current_resource)
 
     def activate_main_window(self):
         main_window = QApplication.instance().main_window
@@ -89,9 +92,7 @@ class Viewer(QLabel):
         self.ctrl.set_last_viewer(self)
 
     def toggle_control(self):
-        if self.view_control is None:
-            self.view_control = ViewControl(self)
-        elif self.view_control.isActiveWindow():
+        if self.view_control.isActiveWindow():
             self.showNormal()
             self.raise_()
             self.activateWindow()
@@ -147,6 +148,7 @@ class Viewer(QLabel):
     def closeEvent(self, event: QCloseEvent):
         if self.view_control is not None:
             self.view_control.close()
+        LOG.debug("Close event on Viewer")
         self.ctrl.config.set_viewer_window_x(self.pos().x())
         self.ctrl.config.set_viewer_window_y(self.pos().y())
         event.accept()
@@ -157,16 +159,34 @@ class ViewControl(QWidget):
     def __init__(self, viewer: Viewer):
         QWidget.__init__(self, None)
         self.viewer = viewer
+        self.ctrl = QApplication.instance().ctrl
+        self.max_width = 160
 
         vbl_0 = QVBoxLayout(self)
+        vbl_0.setContentsMargins(10, 5, 0, 5)  # left, top, right, bottom
         vbl_0.setSizeConstraint(QLayout.SetFixedSize)
 
-        self.lbl_current_file = QLabel()
-        self.lbl_current_file.setFont(QFont("Courier New", 12))
-        self.lbl_current_file.setTextFormat(Qt.RichText)
-        self.lbl_current_file.setTextInteractionFlags(Qt.TextBrowserInteraction)
-        self.lbl_current_file.setOpenExternalLinks(True)
-        vbl_0.addWidget(self.lbl_current_file)
+        self.lbl_current_resource = QLabel()
+        self.lbl_current_resource.setMaximumWidth(self.max_width)
+        self.lbl_current_resource.setFont(QFont("Courier New", 12))
+        self.lbl_current_resource.setStyleSheet(Style.bold())
+        self.lbl_current_resource.setTextFormat(Qt.RichText)
+        self.lbl_current_resource.setTextInteractionFlags(Qt.TextBrowserInteraction)
+        self.lbl_current_resource.setOpenExternalLinks(True)
+        vbl_0.addWidget(self.lbl_current_resource)
+
+        self.lbl_current_image = QLabel()
+        self.lbl_current_image.setMaximumWidth(self.max_width)
+        vbl_0.addWidget(self.lbl_current_image, 1)
+
+        self.lbl_acme_dates = QLabel()
+        self.lbl_acme_dates.setWordWrap(True)
+        self.lbl_acme_dates.setStyleSheet("background-color: yellow;")
+        vbl_0.addWidget(self.lbl_acme_dates)
+
+        self.lbl_view_dates = QLabel()
+        self.lbl_view_dates.setWordWrap(True)
+        vbl_0.addWidget(self.lbl_view_dates)
 
         self.toggle_max_height = QCheckBox("fixed max height (F1)", self)
         self.toggle_max_height.toggled.connect(self.viewer.toggle_max_height)
@@ -208,21 +228,38 @@ class ViewControl(QWidget):
         hbox.addStretch(1)
         vbl_0.addLayout(hbox)
 
-        self.viewer.sgn_viewer_changed.connect(self.on_viewer_changed)
-        self.on_viewer_changed()
+        self.viewer.sgn_resource_changed.connect(self.on_resource_changed)
+        self.on_resource_changed()
 
+        self.move(self.ctrl.config.viewer_control_window_x(), self.ctrl.config.viewer_control_window_y())
         self.show()
 
     def keyPressEvent(self, event: QKeyEvent):
         self.viewer.keyPressEvent(event)
 
-    def on_viewer_changed(self):
-        self.lbl_current_file.setText(self.viewer.current_resource.hyperlink(basename=True))
-        self.lbl_current_file.setToolTip(self.viewer.current_resource.filename())
-        self.setWindowTitle(self.viewer.current_resource.slv_index())
+    def on_resource_changed(self):
+        self.setWindowTitle(self.viewer.current_resource.basename())
+        self.lbl_current_resource.setText(self.viewer.current_resource.hyperlink(slv_index=True))
+        self.lbl_current_resource.setToolTip(self.viewer.current_resource.filename())
+
+        pixmap = self.viewer.pixmap.scaled(self.max_width, MAX_SIZE, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.lbl_current_image.setPixmap(pixmap)
+        self.lbl_current_image.setToolTip(self.viewer.current_resource.filename())
+
+        self.lbl_acme_dates.setVisible(self.viewer.current_resource.count_acme_dates() > 0)
+        self.lbl_acme_dates.setText(self.viewer.current_resource.acm_dates_as_string())
+
+        self.lbl_view_dates.setText(self.viewer.current_resource.view_dates_as_string())
+
         self.lbl_history_index.setText(str(self.viewer.current_resource.history_index()))
         self.toggle_max_height.setChecked(self.viewer.maximumHeight() != MAX_SIZE)
         self.toggle_max_width.setChecked(self.viewer.maximumWidth() != MAX_SIZE)
+
+    def closeEvent(self, event: QCloseEvent):
+        LOG.debug("Close event on Viewer Control")
+        self.ctrl.config.set_viewer_control_window_x(self.pos().x())
+        self.ctrl.config.set_viewer_control_window_y(self.pos().y())
+        event.accept()
 
 
 class ViewerPopup(QMenu):
@@ -230,7 +267,7 @@ class ViewerPopup(QMenu):
     def __init__(self, viewer: Viewer):
         QMenu.__init__(self, "Viewer", viewer)
         self.viewer = viewer
-        self.viewer.sgn_viewer_changed.connect(self.on_viewer_changed)
+        self.viewer.sgn_resource_changed.connect(self.on_resource_changed)
 
         action_control = QAction("Show/Hide Control", self)
         action_control.triggered.connect(viewer.toggle_control)
@@ -255,7 +292,7 @@ class ViewerPopup(QMenu):
         action_close.triggered.connect(viewer.close)
         self.addAction(action_close)
 
-    def on_viewer_changed(self):
+    def on_resource_changed(self):
         file_enabled = self.viewer.current_resource is not None
         self.action_preview.setEnabled(file_enabled)
         self.action_copy_filename.setEnabled(file_enabled)

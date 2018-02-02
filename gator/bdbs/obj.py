@@ -15,6 +15,7 @@ class Resource(object):
         self.__index = index
         self.__history_index = history_index
         self.__view_dates = list()
+        self.__acme_dates = list()
 
     def filename(self):
         return self.__filename
@@ -49,7 +50,7 @@ class Resource(object):
     def long_name(self):
         return "%s %s" % (self.short_name(), self.slv_index())
 
-    def hyperlink(self, length=0, split=False, basename=False):
+    def hyperlink(self, length=0, split=False, basename=False, slv_index=False):
         if length > 0:
             generator = chunk_string(self.__filename, length)
             display = "\n".join(list(generator))
@@ -57,6 +58,8 @@ class Resource(object):
             display = "%s %s" % (self.dir_name(), self.basename())
         elif basename:
             display = self.basename()
+        elif slv_index:
+            display = self.slv_index()
         else:
             display = self.__filename
         return "<a href=\"file://%s\">%s</a>" % (self.__filename, display)
@@ -70,10 +73,24 @@ class Resource(object):
         return self.__view_dates
 
     def view_dates_as_string(self):
-        return " | ".join(self.view_dates("%Y-%m-%d %H:%M:%S"))
+        return "\n".join(self.view_dates("%Y-%m-%d %H:%M:%S"))
 
     def count_view_dates(self):
         return len(self.__view_dates)
+
+    def set_acme_dates(self, acme_dates: list()):
+        self.__acme_dates = acme_dates
+
+    def acme_dates(self, fmt=None):
+        if fmt:
+            return [dt.strftime(fmt) for dt in self.__acme_dates]
+        return self.__acme_dates
+
+    def acm_dates_as_string(self):
+        return "\n".join(self.acme_dates("%Y-%m-%d %H:%M:%S"))
+
+    def count_acme_dates(self):
+        return len(self.__acme_dates)
 
     def slv_index(self):
         return "sl# %s" % str(self.__index).zfill(6)
