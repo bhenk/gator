@@ -3,7 +3,7 @@
 import logging
 
 from PyQt5.QtGui import QCloseEvent, QKeyEvent
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu
+from PyQt5.QtWidgets import QApplication, QMainWindow
 from app.ctrl import Ctrl
 from app.gframe import GFrame
 from gwid.util import GHotKey
@@ -33,20 +33,22 @@ class WMain(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.ctrl = QApplication.instance().ctrl
         self.setWindowTitle("Gator")
-        self.create_menus()
+        self.ctrl = QApplication.instance().ctrl
+
+        # self.menubar = self.menuBar()
+        # self.menubar.setNativeMenuBar(False)
+        # self.menu_file = QMenu("File", self)
+        # self.menubar.addMenu(self.menu_file)
+
+        # self.menu_bar = GMenuBar() # self.menuBar()
+        # self.menu_bar.setNativeMenuBar(False)
+        # self.setMenuBar(self.menu_bar)
+        # self.ctrl.menu_bar = self.menu_bar
+
         self.gframe = GFrame(self)
         self.setCentralWidget(self.gframe)
-        # self.resize(self.ctrl.config.main_window_width(), self.ctrl.config.main_window_height())
         self.move(self.ctrl.config.main_window_x(), self.ctrl.config.main_window_y())
-
-    def create_menus(self):
-        self.menubar = self.menuBar()
-        self.menubar.setNativeMenuBar(False)
-
-        self.menu_file = QMenu("File", self)
-        self.menubar.addMenu(self.menu_file)
 
     def keyPressEvent(self, event: QKeyEvent):
         if GHotKey.matches(event):

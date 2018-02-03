@@ -100,6 +100,8 @@ class Repository(object):
         return bdb
 
     def close(self):
+        for bdb in self.__databases.values():
+            bdb.close()
         self.__db_env.close(db.DB_FORCESYNC)
 
 

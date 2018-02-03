@@ -43,13 +43,13 @@ class Viewer(QLabel):
         self.popup = ViewerPopup(self)
         self.browser_window = None
 
+        self.move(self.ctrl.config.viewer_window_x(), self.ctrl.config.viewer_window_y())
         self.pixmap = None
         self.current_resource = None  # type: Resource
         self.set_resource(self.navigator.current_resource())
 
         self.view_control = ViewControl(self)
 
-        self.move(self.ctrl.config.viewer_window_x(), self.ctrl.config.viewer_window_y())
         self.show()
 
     def on_sgn_switch_resources(self):
@@ -356,7 +356,6 @@ class ViewerPopup(QMenu):
         self.addSeparator()
 
         action_close = QAction("Close", self)
-        #action_close.setShortcut("Ctrl+X")
         action_close.triggered.connect(viewer.close)
         self.addAction(action_close)
 

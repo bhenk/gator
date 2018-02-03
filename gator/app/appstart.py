@@ -4,8 +4,6 @@ import logging.config
 import os
 import sys
 
-from core.configuration import PathFinder, GatorConf
-
 CONFIGURATION_DIR = "conf"
 LOGGING_CFG_FILE = "logging.conf"
 
@@ -21,6 +19,8 @@ if __name__ == '__main__':
 
     # Start this module from anywhere on the system: append root directory of project.
     sys.path.append(application_home)
+
+    from core.configuration import PathFinder, GatorConf
 
     # Find out some initial paths
     path_finder = PathFinder()

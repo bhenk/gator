@@ -7,6 +7,7 @@ from inspect import stack, FrameInfo
 import gwid.logs
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+from app.menu import GMenuBar
 from bdbs.obj import Resource
 from bdbs.store import Store
 from core import services
@@ -32,6 +33,7 @@ class Ctrl(QObject):
         self.configuration_index = self.path_finder.index(self.configuration_file)
         LOG.info("Configuration: %s" % self.configuration_file)
         LOG.info("Gator Home   : %s" % self.gator_home)
+
         self.resources = Resources(self.config.resources())
         LOG.info(self.resources.to_string())
         db_home = os.path.join(self.gator_home, "db")
@@ -40,18 +42,21 @@ class Ctrl(QObject):
 
         self.last_viewer = None
         self.is_closing = False
+        #self.menu_bar = None
 
     def close(self):
+        self.store.close()
         if not self.is_closing:
             self.is_closing = True
             LOG.info("Closing Ctrl")
             self.sgn_main_window_closing.emit()
-            self.store.close()
 
     def switch_configuration(self, configuration_file: str):
         if self.configuration_file == configuration_file:
             return
         LOG.info("Switching configuration: %s" % configuration_file)
+        self.store.close()
+        self.config.persist()
 
         self.configuration_file = os.path.abspath(configuration_file)
         self.gator_home = os.path.dirname(self.configuration_file)

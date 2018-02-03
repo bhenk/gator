@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
+import csv
 import os
 import sys
 from statistics import mean, harmonic_mean, median, median_low, median_high, stdev, pstdev
@@ -81,3 +82,13 @@ class Stat(object):
         return join.join(
             [item[0] + ": " + (f.format(item[1]) if isinstance(item[1], float) else str(item[1])) for item in
              self.to_dict().items()])
+
+
+class NlDialect(object):
+    delimiter = ';'
+    quotechar = '"'
+    escapechar = None
+    doublequote = True
+    skipinitialspace = False
+    lineterminator = '\r\n'
+    quoting = csv.QUOTE_MINIMAL

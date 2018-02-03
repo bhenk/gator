@@ -32,6 +32,8 @@ class GFrame(QFrame):
         self.ctrl.sgn_switch_resources.connect(self.on_sgn_switch_resources)
         self.ctrl.sgn_main_window_closing.connect(self.on_main_window_closing)
 
+        #self.ctrl.menu_bar.sgn_new_viewer.connect(self.on_btn_viewer_clicked)
+
         self.path_finder = self.ctrl.path_finder  # type: PathFinder
         self.config = self.ctrl.config  # type: GatorConf
         self.resources = self.ctrl.resources  # type: Resources
@@ -67,7 +69,8 @@ class GFrame(QFrame):
         grid.addWidget(self.lbl_resources_count, 1, 1)
         grid.addWidget(btn_resources, 1, 2)
 
-        first_resource = Navigator(self.ctrl.store, self.resources).current_resource()
+        self.next_navigator = Navigator(self.ctrl.store, self.resources)
+        first_resource = self.next_navigator.current_resource()
         self.image_frame = ResourceWidget(self, first_resource, 200)
         vbl0.addWidget(self.image_frame, 1)
 
@@ -122,9 +125,12 @@ class GFrame(QFrame):
             self.ctrl.switch_resources()
 
     # ##### viewers #####
-    def on_btn_viewer_clicked(self, filename=None):
-        navigator = Navigator(self.ctrl.store, self.resources, filename=filename)
-        Viewer(self, navigator)
+    def on_btn_viewer_clicked(self, *args):
+        # first viewer is created with navigator used for ResourceWidget
+        if self.next_navigator is None:
+            self.next_navigator = Navigator(self.ctrl.store, self.resources)
+        Viewer(self, self.next_navigator)
+        self.next_navigator = None
 
     def set_resource(self, resource: Resource):
         self.image_frame.set_resource(resource)
@@ -164,10 +170,6 @@ class ResourceWidget(QWidget):
         self.lbl_viewed = QLabel()
         self.lbl_viewed.setWordWrap(True)
 
-        # hbox = QHBoxLayout()
-        # hbox.addWidget(self.lbl_image)
-        # hbox.addWidget(self.lbl_viewed)
-
         vbl0.addWidget(self.lbl_filename)
         vbl0.addWidget(self.lbl_image, 1)
         vbl0.addWidget(self.lbl_viewed)
@@ -188,13 +190,13 @@ class ResourceWidget(QWidget):
         self.lbl_image.setMaximumSize(QSize(MAX_SIZE, MAX_SIZE))
         self.lbl_image.setMinimumSize(QSize(25, 25))
         if self.pixmap is not None:
-            height = event.size().height() - self.lbl_filename.height() - 15
+            height = event.size().height() - self.lbl_filename.height() # -15 with menu bar
             size = QSize(event.size().width(), height)
             pixmap = self.pixmap.scaled(size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.lbl_image.setPixmap(pixmap)
 
     def on_lbl_image_clicked(self):
-        self.parent().on_btn_viewer_clicked(filename=self.resource.filename())
+        self.parent().on_btn_viewer_clicked()
 
     def img_heigth(self):
         return self.lbl_image.height()

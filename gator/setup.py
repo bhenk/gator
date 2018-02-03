@@ -6,7 +6,7 @@ from setuptools import setup
 setup(
     name='gator',
     version=version.__version__,
-    packages=['app', 'bdb', 'core', 'gwid'],
+    packages=['app', 'bdbs', 'core', 'gwid'],
     url='https://anhenet.nl',
     license='Apache License 2.0',
     author='henk van den berg',

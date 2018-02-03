@@ -70,22 +70,17 @@ class Resources(object):
 
 class Navigator(object):
 
-    def __init__(self, store: Store, resources=Resources(), filename=None):
+    def __init__(self, store: Store, resources=Resources()):
         self.__store = store
         self.__resources = resources
         self.__size = self.__resources.resource_count()
-        self.__min_views = self.stat_view_count().min()
-        LOG.info("navigator min views = %d" % self.__min_views)
+        stat = self.stat_view_count()
+        self.__min_views = stat.min()
+        LOG.info("view stats: %s" % stat.to_string(join=" | "))
         self.__history_list = list()
         self.__history_index = 0
         self.__index = -1
-        self.__current_file = None
-        if filename:
-            self.__index = self.__resources.get_index(filename)
-            if self.__index > -1:
-                self.__current_file = filename
-        if self.__current_file is None:
-            self.__current_file = self.__random_file()
+        self.__current_file = self.__random_file()
         self.__history_list.append(self.__current_file)
         self.__current_resource = self.__create_resource()
 
@@ -171,3 +166,4 @@ class Navigator(object):
         self.__store.view_date_store().update(self.__current_resource)
         return self.__current_resource
 
+# strategy acme, last viewed (history back),

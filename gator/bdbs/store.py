@@ -1,12 +1,19 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
+import csv
 import logging
 from abc import abstractmethod
 from datetime import datetime
 
+import os
+
+import re
+
+import shutil
 from bdbs import env
 from bdbs.env import BDB, Repository
 from bdbs.obj import Resource
+from core.services import NlDialect
 
 LOG = logging.getLogger(__name__)
 
@@ -92,7 +99,10 @@ class Store(object):
 
     def __init__(self, db_home):
         self.repository = Repository(db_home)
+        self.__open = True
         self.stores = dict()
+        self.store_names = [ViewDateStore.__name__.lower(),
+                            AcmeDateStore.__name__.lower()]
 
     def view_date_store(self) -> ViewDateStore:
         filename = "store/%s.bdb" % ViewDateStore.__name__.lower()
@@ -109,6 +119,45 @@ class Store(object):
         return self.stores[filename]
 
     def close(self):
-        self.repository.close()
-        LOG.info("Closed store @ %s" % self.repository.db_home())
+        if self.__open:
+            try:
+                self.replicate()
+            except Exception as err:
+                LOG.error("Could not replicate", err)
+            finally:
+                self.repository.close()
+                self.__open = False
+                LOG.info("##### Closed store @ %s" % self.repository.db_home())
+        else:
+            LOG.warning("Trying to close a store that has already been closed.")
+
+    def replicate(self):
+        rep_dir = self._replication_dir()
+        for name in self.store_names:
+            self._replicate_bdb(self.view_date_store().bdb, rep_dir, name + ".csv")
+        self._cleanup(rep_dir)
+
+    def _replication_dir(self):
+        dir = os.path.dirname(self.repository.db_home())
+        date_str = datetime.today().strftime(DATE_FORMAT)
+        rep_dir = os.path.join(dir, "repl", date_str)
+        os.makedirs(rep_dir, exist_ok=True)
+        return rep_dir
+
+    def _replicate_bdb(self, bdb, rep_dir, name):
+        filename = os.path.join(rep_dir, name)
+        with open(filename, "w", encoding="UTF-8") as f:
+            writer = csv.writer(f, dialect=NlDialect)
+            for item in bdb.items_decoded():
+                writer.writerow([item[0], item[1]])
+        LOG.info("Replicated %s" % filename)
+
+    def _cleanup(self, rep_dir):
+        dir = os.path.dirname(rep_dir, )
+        for rep_dir in sorted([d for d in os.listdir(dir) if re.search("^[0-9]*$", d)], reverse=True)[10:]:
+            target_dir = os.path.join(dir, rep_dir)
+            shutil.rmtree(target_dir)
+            LOG.info("Deleted db replica %s" % target_dir)
+
+
 
