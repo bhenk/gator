@@ -6,6 +6,7 @@ from PyQt5.QtCore import QItemSelectionModel, Qt, QSize
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QListView, QAbstractItemView, QPushButton, QFileDialog, \
     QInputDialog
+
 from gwid.util import GIcon
 
 

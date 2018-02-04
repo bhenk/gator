@@ -86,10 +86,10 @@ class GHotKey():
     def is_meta_sequence(event: QKeyEvent):
         if event.nativeModifiers() != 1048840:
             return  False
-        if event.key() == Qt.Key_X:
-            LOG.info("Quiting application")
-            qApp.quit()
-            return True
+        # if event.key() == Qt.Key_X:
+        #     LOG.info("Quiting application")
+        #     qApp.quit()
+        #     return True
 
 
 

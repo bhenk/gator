@@ -1,35 +1,35 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import QMenuBar, QMenu, QAction
+from PyQt5.QtWidgets import QMenuBar, QAction
 
 
 class GMenuBar(QMenuBar):
 
-    sgn_new_viewer = pyqtSignal(bool)
-
     def __init__(self, parent=None):
         QMenuBar.__init__(self, parent)
-        self.addMenu(FileMenu(self))
-        self.addMenu(ViewMenu(self))
+
+        self.menu_file = self.addMenu("File")
+        #self.menu_file.aboutToShow.connect(self.on_menu_file_about_to_show)
+        self.menu_edit = self.addMenu("Edit")
+        self.menu_view = self.addMenu("View")
+
+        self.menu_close_viewer = self.menu_file.addMenu("Close viewer")
+        self.action_close_viewers = QAction("Close all viewers", self)
+        self.action_close_viewers.triggered.connect(self.on_close_all_viewers)
+        self.menu_file.addAction(self.action_close_viewers)
+
+        self.menu_file.addSection("main")
+
+    # https://bugreports.qt.io/browse/QTBUG-56276
+    def on_menu_file_about_to_show(self):
+        print("=======================")
+        for action in self.menu_file.actions():
+            print(action.text())
+
+    def on_close_all_viewers(self):
+        for action in self.menu_close_viewer.actions():
+            action.activate(QAction.Trigger)
 
 
-class FileMenu(QMenu):
-
-    def __init__(self, parent=None):
-        QMenu.__init__(self, "File", parent)
-
-        action_open_file = QAction("Open file", self)
-        self.addAction(action_open_file)
-
-
-class ViewMenu(QMenu):
-
-    def __init__(self, parent=None):
-        QMenu.__init__(self, "View", parent)
-
-        action_new_viewer = QAction("New viewer", self)
-        action_new_viewer.triggered.connect(GMenuBar.sgn_new_viewer)
-        self.addAction(action_new_viewer)
 
 

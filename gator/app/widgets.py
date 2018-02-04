@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 import logging
 
-import version
 from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QFont, QDesktopServices
 from PyQt5.QtWidgets import QWidget, QApplication, QLabel, QTextBrowser, \
     QVBoxLayout, QHBoxLayout, QGridLayout
+
+import version
 from app.style import Style
 
 LOG = logging.getLogger(__name__)

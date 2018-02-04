@@ -3,7 +3,6 @@
 import logging
 import os
 import random
-from statistics import median_low, median
 
 from bdbs.obj import Resource
 from bdbs.store import Store
@@ -15,6 +14,10 @@ EXTENSIONS = ['.jpg', '.bmp', '.png', '.gif']
 
 
 class Resources(object):
+
+    @staticmethod
+    def filter_list():
+        return "Images(*%s)" % " *".join(EXTENSIONS)
 
     def __init__(self, path_list=list()):
         self.__path_list = path_list
@@ -39,6 +42,9 @@ class Resources(object):
 
     def folder_list(self):
         return list(self.__folder_list)
+
+    def common_prefix(self):
+        return os.path.dirname(os.path.commonprefix(self.__folder_list))
 
     def paths_count(self):
         return len(self.__path_list)
@@ -70,7 +76,7 @@ class Resources(object):
 
 class Navigator(object):
 
-    def __init__(self, store: Store, resources=Resources()):
+    def __init__(self, store: Store, resources=Resources(), filename=None):
         self.__store = store
         self.__resources = resources
         self.__size = self.__resources.resource_count()
@@ -80,7 +86,11 @@ class Navigator(object):
         self.__history_list = list()
         self.__history_index = 0
         self.__index = -1
-        self.__current_file = self.__random_file()
+        if filename and filename in self.__resources.resource_list():
+            self.__index = self.__resources.get_index(filename)
+            self.__current_file = filename
+        else:
+            self.__current_file = self.__random_file()
         self.__history_list.append(self.__current_file)
         self.__current_resource = self.__create_resource()
 

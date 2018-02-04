@@ -4,7 +4,6 @@ import logging
 import os
 import sys
 import unittest
-from statistics import median, median_low, mean
 
 from bdbs.store import Store
 from core.services import Format

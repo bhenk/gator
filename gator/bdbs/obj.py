@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import os
 
+import re
+
 
 def chunk_string(string, length):
     return (string[0+i:length+i] for i in range(0, len(string), length))
@@ -9,12 +11,18 @@ def chunk_string(string, length):
 
 class Resource(object):
 
+    SLV_INDEX_PATTERN = "sl# [0-9]{6}"
+
     @staticmethod
     def dates_formatted(date_list, fmt=None):
         if fmt:
             return [dt.strftime(fmt) for dt in date_list]
         else:
             return date_list
+
+    @staticmethod
+    def is_slv_index(string):
+        return re.search(Resource.SLV_INDEX_PATTERN, string)
 
     def __init__(self, filename=None, index=-1, history_index=-1):
         self.__filename = filename
@@ -45,7 +53,7 @@ class Resource(object):
         return None if self.__filename is None else os.path.splitext(self.basename())[0]
 
     def long_name(self):
-        return None if self.__filename is None else "%s %s" % (self.short_name(), self.slv_index())
+        return None if self.__filename is None else "%s %s" % (self.slv_index(), self.short_name())
 
     def hyperlink(self, length=0, split=False, basename=False, slv_index=False):
         if length > 0:
@@ -81,3 +89,4 @@ class Resource(object):
 
     def slv_index(self):
         return None if self.__index < 0 else "sl# %s" % str(self.__index).zfill(6)
+

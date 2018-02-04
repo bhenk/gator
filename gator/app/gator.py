@@ -3,7 +3,8 @@
 import logging
 
 from PyQt5.QtGui import QCloseEvent, QKeyEvent
-from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QMenu
+
 from app.ctrl import Ctrl
 from app.gframe import GFrame
 from gwid.util import GHotKey
@@ -20,6 +21,7 @@ class Gator(QApplication):
         self.ctrl = Ctrl(gator_config)
 
         self.main_window = WMain()
+        #self.main_window = GMainWindow()
         self.aboutToQuit.connect(self.__before_close__)
 
     def __before_close__(self):
@@ -36,15 +38,13 @@ class WMain(QMainWindow):
         self.setWindowTitle("Gator")
         self.ctrl = QApplication.instance().ctrl
 
-        # self.menubar = self.menuBar()
-        # self.menubar.setNativeMenuBar(False)
-        # self.menu_file = QMenu("File", self)
-        # self.menubar.addMenu(self.menu_file)
+        self.setMenuBar(self.ctrl.menu_bar())
+        self.menu_file = self.ctrl.menu_file()  # type: QMenu
 
-        # self.menu_bar = GMenuBar() # self.menuBar()
-        # self.menu_bar.setNativeMenuBar(False)
-        # self.setMenuBar(self.menu_bar)
-        # self.ctrl.menu_bar = self.menu_bar
+        action_exit = QAction("3&xit Gator", self)
+        action_exit.setShortcut("Ctrl+X")
+        action_exit.triggered.connect(QApplication.quit)
+        self.ctrl.menu_file().addAction(action_exit)
 
         self.gframe = GFrame(self)
         self.setCentralWidget(self.gframe)
@@ -66,6 +66,7 @@ class WMain(QMainWindow):
 
     def closeEvent(self, event: QCloseEvent):
         LOG.debug("Main window close event")
-        self.ctrl.close()
+        QApplication.quit()
         event.accept()
+
 

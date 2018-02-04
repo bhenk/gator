@@ -2,14 +2,12 @@
 # -*- coding: utf-8 -*-
 import csv
 import logging
+import os
+import re
+import shutil
 from abc import abstractmethod
 from datetime import datetime
 
-import os
-
-import re
-
-import shutil
 from bdbs import env
 from bdbs.env import BDB, Repository
 from bdbs.obj import Resource

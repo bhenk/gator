@@ -4,7 +4,7 @@ import csv
 from datetime import datetime
 
 from bdbs import store, env
-from bdbs.store import Store, DateStore
+from bdbs.store import Store
 
 
 def insert_dates():

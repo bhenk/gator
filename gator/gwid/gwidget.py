@@ -1,7 +1,8 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtWidgets import QLabel, QWidget, QGridLayout, QVBoxLayout, QPlainTextEdit, QSlider, QHBoxLayout
+from PyQt5.QtWidgets import QLabel, QWidget, QVBoxLayout, QPlainTextEdit
+
 from core.services import Stat
 
 

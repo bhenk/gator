@@ -4,9 +4,10 @@ import logging.handlers
 import os
 from inspect import stack, FrameInfo
 
-import gwid.logs
 from PyQt5.QtCore import QObject, pyqtSignal
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox, QMenu, QMenuBar
+
+import gwid.logs
 from app.menu import GMenuBar
 from bdbs.obj import Resource
 from bdbs.store import Store
@@ -42,7 +43,48 @@ class Ctrl(QObject):
 
         self.last_viewer = None
         self.is_closing = False
-        #self.menu_bar = None
+        self.__menu_bar = GMenuBar()
+        self.__menu_bar.setNativeMenuBar(True)
+
+    def menu_bar(self) -> QMenuBar:
+        """
+        Handle for the common menu bar.
+        :return: The menu bar.
+        :rtype : QMenuBar
+        """
+        return self.__menu_bar
+
+    def menu_file(self) -> QMenu:
+        """
+        Handle for the `File` menu.
+        :return: The `File` menu.
+        :rtype : QMenu
+        """
+        return self.__menu_bar.menu_file
+
+    def menu_view(self) -> QMenu:
+        """
+        Handle for the `View` menu.
+        :return: The `View` menu.
+        @rtype : QMenu
+        """
+        return self.__menu_bar.menu_view
+
+    def menu_edit(self) -> QMenu:
+        """
+        Handle for the `Edit` menu.
+        :return: The `Edit` menu.
+        @rtype : QMenu
+        """
+        return self.__menu_bar.menu_edit
+
+    def menu_close_viewer(self) -> QMenu:
+        """
+        A submenu on the `File` menu.
+        :return: submenu on the `File` menu
+        @rtype : QMenu
+        """
+        return self.__menu_bar.menu_close_viewer
 
     def close(self):
         self.store.close()
@@ -122,7 +164,7 @@ class Ctrl(QObject):
 
     @staticmethod
     def __msg_details(frame_stack: FrameInfo):
-        return "\n".join([Ctrl.__msg_detail(f) for f in frame_stack[3:]])
+        return "\n".join([Ctrl.__msg_detail(f) for f in frame_stack])
 
 
 

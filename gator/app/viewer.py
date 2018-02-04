@@ -5,9 +5,10 @@ import subprocess
 
 import exifread
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QPixmap, QKeyEvent, QCloseEvent, QMouseEvent, QFont
+from PyQt5.QtGui import QPixmap, QKeyEvent, QCloseEvent, QMouseEvent, QFont, QResizeEvent
 from PyQt5.QtWidgets import QLabel, QApplication, QWidget, QVBoxLayout, QCheckBox, QGridLayout, QPushButton, \
     QHBoxLayout, QLayout, QMenu, QAction, QFrame
+
 from app.style import Style
 from app.widgets import BrowserWindow
 from bdbs.obj import Resource
@@ -30,10 +31,9 @@ class Viewer(QLabel):
         QLabel.__init__(self)
         self.parent = parent
         self.navigator = navigator  # type: Navigator
+        self.setAttribute(Qt.WA_DeleteOnClose, True)
         self.ctrl = QApplication.instance().ctrl
-        self.ctrl.sgn_main_window_closing.connect(self.on_main_window_closing)
-        self.ctrl.sgn_switch_resources.connect(self.on_sgn_switch_resources)
-
+        self.connect_signals()
         self.scale_screen_size = self.ctrl.config.viewer_scale_screen_size()
 
         self.setMinimumWidth(100)
@@ -45,12 +45,22 @@ class Viewer(QLabel):
 
         self.move(self.ctrl.config.viewer_window_x(), self.ctrl.config.viewer_window_y())
         self.pixmap = None
+
+        # actions
+        self.menu_close_viewer = self.ctrl.menu_close_viewer()  # type: QMenu
+        self.action_close_me = QAction("no name")
+        self.action_close_me.triggered.connect(self.close)
+        self.menu_close_viewer.addAction(self.action_close_me)
+
         self.current_resource = None  # type: Resource
         self.set_resource(self.navigator.current_resource())
 
         self.view_control = ViewControl(self)
-
         self.show()
+
+    def connect_signals(self):
+        self.ctrl.sgn_main_window_closing.connect(self.on_main_window_closing)
+        self.ctrl.sgn_switch_resources.connect(self.on_sgn_switch_resources)
 
     def on_sgn_switch_resources(self):
         LOG.debug("sgn_switch_resources received")
@@ -82,6 +92,7 @@ class Viewer(QLabel):
                 self.resize(self.pixmap.size())
 
             self.setWindowTitle(self.current_resource.long_name())
+            self.action_close_me.setText(self.current_resource.long_name())
             self.ctrl.store.view_date_store().add_date_on(self.current_resource)
             self.ctrl.sgn_resource_changed.emit(self.current_resource)
         self.sgn_resource_changed.emit(self.current_resource)
@@ -166,23 +177,22 @@ class Viewer(QLabel):
         LOG.debug("Received signal main window closing")
         self.close()
 
-    def close(self):
-        LOG.debug("Closing %s" % self.__class__.__name__)
-        super().close()
-
     def closeEvent(self, event: QCloseEvent):
-        LOG.debug("Close event on %s" % self.__class__.__name__)
+        # Close events are sent to widgets that the user wants to close,
+        # usually by choosing "Close" from the window menu,
+        # or by clicking the X title bar button.
+        # They are also sent when you call QWidget::close() to close a widget programmatically.
+        LOG.debug("Close event on %s %s" % (self.__class__.__name__, self.windowTitle()))
         self.persist()
+        if self.view_control is not None:
+            self.view_control.close()
+        self.menu_close_viewer.removeAction(self.action_close_me)
         event.accept()
 
     def persist(self):
-        if self.view_control is not None:
-            self.view_control.close()
-        LOG.debug("Persist viewer position")
         self.ctrl.config.set_viewer_window_x(self.pos().x())
         self.ctrl.config.set_viewer_window_y(self.pos().y())
         self.ctrl.config.set_viewer_scale_screen_size(self.scale_screen_size)
-        self.close()
 
 
 class ViewControl(QWidget):

@@ -4,6 +4,7 @@
 import sys
 
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QHBoxLayout
+
 from gwid.listdialog import GListDialog, GPathListDialog
 
 

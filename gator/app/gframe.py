@@ -5,7 +5,9 @@ import os
 
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QPixmap, QKeySequence
-from PyQt5.QtWidgets import QFrame, QApplication, QVBoxLayout, QLabel, QComboBox, QPushButton, QGridLayout, QWidget
+from PyQt5.QtWidgets import QFrame, QApplication, QVBoxLayout, QLabel, QComboBox, QPushButton, QGridLayout, QWidget, \
+    QFileDialog, QAction, QMenu
+
 from app.style import Style
 from app.viewer import Viewer
 from bdbs.obj import Resource
@@ -32,8 +34,6 @@ class GFrame(QFrame):
         self.ctrl.sgn_switch_resources.connect(self.on_sgn_switch_resources)
         self.ctrl.sgn_main_window_closing.connect(self.on_main_window_closing)
 
-        #self.ctrl.menu_bar.sgn_new_viewer.connect(self.on_btn_viewer_clicked)
-
         self.path_finder = self.ctrl.path_finder  # type: PathFinder
         self.config = self.ctrl.config  # type: GatorConf
         self.resources = self.ctrl.resources  # type: Resources
@@ -50,7 +50,7 @@ class GFrame(QFrame):
         self.path_combo = QComboBox(self)
         self.path_combo.currentIndexChanged.connect(self.on_path_combo_changed)
         btn_path = QPushButton("...")
-        btn_path.clicked.connect(self.on_btn_path_clicked)
+        btn_path.clicked.connect(self.show_configuration_window)
         grid.addWidget(lbl_config, 0, 0)
         grid.addWidget(self.path_combo, 0, 1)
         grid.addWidget(btn_path, 0, 2)
@@ -64,10 +64,33 @@ class GFrame(QFrame):
         self.lbl_resources_count.setStyleSheet(Style.green_text() + Style.bold())
 
         btn_resources = QPushButton("...")
-        btn_resources.clicked.connect(self.on_btn_resources_clicked)
+        btn_resources.clicked.connect(self.show_resources_window)
         grid.addWidget(self.btn_viewer, 1, 0)
         grid.addWidget(self.lbl_resources_count, 1, 1)
         grid.addWidget(btn_resources, 1, 2)
+
+        # actions
+        self.menu_file = self.ctrl.menu_file()  # type: QMenu
+        self.menu_view = self.ctrl.menu_view()  # type: QMenu
+        self.menu_edit = self.ctrl.menu_edit()  # type: QMenu
+
+        action_open_file = QAction("Open file...", self)
+        action_open_file.setShortcut("Ctrl+O")
+        action_open_file.triggered.connect(self.on_open_file)
+        self.menu_file.insertAction(self.menu_file.actions()[0], action_open_file)
+
+        action_new_viewer = QAction("New &viewer", self)
+        action_new_viewer.setShortcut("Ctrl+V")
+        action_new_viewer.triggered.connect(self.on_btn_viewer_clicked)
+        self.menu_view.addAction(action_new_viewer)
+
+        action_show_configuration = QAction("Gator cfg...", self)
+        action_show_configuration.triggered.connect(self.show_configuration_window)
+        self.menu_edit.addAction(action_show_configuration)
+
+        action_show_resources = QAction("Resources...", self)
+        action_show_resources.triggered.connect(self.show_resources_window)
+        self.menu_edit.addAction(action_show_resources)
 
         self.next_navigator = Navigator(self.ctrl.store, self.resources)
         first_resource = self.next_navigator.current_resource()
@@ -81,7 +104,7 @@ class GFrame(QFrame):
         self.path_combo.clear()
         self.path_combo.addItems(self.path_finder.path_list())
 
-    def on_btn_path_clicked(self):
+    def show_configuration_window(self):
         pd = GPathListDialog(self, self.path_finder.path_list(), window_title="Configuration file",
                              mode=GPathListDialog.MODE_SAVE_FILE_NAME,
                              start_path=os.path.expanduser("~/gator.cfg"))
@@ -114,7 +137,7 @@ class GFrame(QFrame):
         self.lbl_resources_count.setText(self.resources.to_string())
         self.btn_viewer.setEnabled(self.resources.resource_count() > 0)
 
-    def on_btn_resources_clicked(self):
+    def show_resources_window(self):
         pd = GPathListDialog(self, self.resources.path_list(), window_title="Resources",
                              mode=GPathListDialog.MODE_EXISTING_DIRECTORY,
                              start_path=os.path.dirname(self.ctrl.gator_home), allow_duplicates=True)
@@ -138,8 +161,15 @@ class GFrame(QFrame):
     def on_main_window_closing(self):
         LOG.debug("Received signal main window closing")
 
-    def mousePressEvent(self, QMouseEvent):
-        print("mouse pressed")
+    def on_open_file(self, *args):
+        common_prefix = self.resources.common_prefix()
+        LOG.debug("Get open filename from %s" % common_prefix)
+        filename = QFileDialog.getOpenFileName(self, "Open File", common_prefix, filter=Resources.filter_list())
+        if filename[0] != "":
+            if filename[0] in self.resources.resource_list():
+                Viewer(self, Navigator(self.ctrl.store, self.resources, filename[0]))
+            else:
+                self.ctrl.info("%s not in resource list" % filename[0])
 
 
 # ##### ##########################################################
