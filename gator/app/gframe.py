@@ -84,6 +84,7 @@ class GFrame(QFrame):
         action_new_viewer.triggered.connect(self.on_btn_viewer_clicked)
         self.menu_view.addAction(action_new_viewer)
 
+        self.menu_edit.addSeparator()
         action_show_configuration = QAction("Gator cfg...", self)
         action_show_configuration.triggered.connect(self.show_configuration_window)
         self.menu_edit.addAction(action_show_configuration)

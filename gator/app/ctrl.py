@@ -78,6 +78,14 @@ class Ctrl(QObject):
         """
         return self.__menu_bar.menu_edit
 
+    def menu_window(self) -> QMenu:
+        """
+        Handle for the `Window` menu.
+        :return: The `Window` menu.
+        @rtype : QMenu
+        """
+        return self.__menu_bar.menu_window
+
     def menu_close_viewer(self) -> QMenu:
         """
         A submenu on the `File` menu.

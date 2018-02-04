@@ -4,10 +4,10 @@ import logging
 import subprocess
 
 import exifread
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal, QEvent
 from PyQt5.QtGui import QPixmap, QKeyEvent, QCloseEvent, QMouseEvent, QFont, QResizeEvent
 from PyQt5.QtWidgets import QLabel, QApplication, QWidget, QVBoxLayout, QCheckBox, QGridLayout, QPushButton, \
-    QHBoxLayout, QLayout, QMenu, QAction, QFrame
+    QHBoxLayout, QLayout, QMenu, QAction, QFrame, QMessageBox
 
 from app.style import Style
 from app.widgets import BrowserWindow
@@ -40,7 +40,6 @@ class Viewer(QLabel):
         self.setMinimumHeight(100)
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.StrongFocus)
-        self.popup = ViewerPopup(self)
         self.browser_window = None
 
         self.move(self.ctrl.config.viewer_window_x(), self.ctrl.config.viewer_window_y())
@@ -48,14 +47,32 @@ class Viewer(QLabel):
 
         # actions
         self.menu_close_viewer = self.ctrl.menu_close_viewer()  # type: QMenu
-        self.action_close_me = QAction("no name")
+        self.menu_edit = self.ctrl.menu_edit()  # type: QMenu
+        self.menu_window = self.ctrl.menu_window()  # type: QMenu
+
+        self.action_close_me = QAction("no name", self)
         self.action_close_me.triggered.connect(self.close)
         self.menu_close_viewer.addAction(self.action_close_me)
 
+        self.action_acme_me = QAction("Acme me", self)
+        self.action_acme_me.setShortcut("Ctrl+A")
+        self.action_acme_me.triggered.connect(self.acme_me)
+
+        self.action_copy_filename = QAction("Copy filename")
+        self.action_copy_filename.triggered.connect(self.copy_filename)
+
+        self.action_copy_pixmap = QAction("Copy image")
+        self.action_copy_pixmap.triggered.connect(self.copy_pixmap)
+
+        self.action_activate_me = QAction("no name", self)
+        self.action_activate_me.triggered.connect(self.activate_self)
+        self.action_activate_me.setCheckable(True)
+        self.menu_window.addAction(self.action_activate_me)
+
         self.current_resource = None  # type: Resource
         self.set_resource(self.navigator.current_resource())
-
         self.view_control = ViewControl(self)
+        self.popup = ViewerPopup(self)
         self.show()
 
     def connect_signals(self):
@@ -93,6 +110,8 @@ class Viewer(QLabel):
 
             self.setWindowTitle(self.current_resource.long_name())
             self.action_close_me.setText(self.current_resource.long_name())
+            self.action_activate_me.setText(self.current_resource.long_name())
+            self.action_acme_me.setText("Acme %s" % self.current_resource.slv_index())
             self.ctrl.store.view_date_store().add_date_on(self.current_resource)
             self.ctrl.sgn_resource_changed.emit(self.current_resource)
         self.sgn_resource_changed.emit(self.current_resource)
@@ -103,8 +122,36 @@ class Viewer(QLabel):
             return
         elif event.nativeModifiers() == 1048840:
             if event.key() == Qt.Key_A:  # Ctrl+Acme
-                self.ctrl.store.acme_date_store().add_date_on(self.current_resource)
-                self.sgn_resource_changed.emit(self.current_resource)
+                self.acme_me()
+
+    def acme_me(self):
+        msg_box = QMessageBox()
+        msg_box.setWindowTitle("ACME")
+        msg_box.setText("Acme %s" % self.current_resource.long_name())
+        msg_box.setInformativeText("Ok to proceed?")
+        msg_box.setIcon(QMessageBox.Question)
+        msg_box.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
+        msg_box.setDefaultButton(QMessageBox.Yes)
+        exe = msg_box.exec()
+        if exe == QMessageBox.Yes:
+            self.ctrl.store.acme_date_store().add_date_on(self.current_resource)
+            self.sgn_resource_changed.emit(self.current_resource)
+
+    def event(self, event: QEvent):
+        if event.type() == QEvent.WindowActivate:
+            self.action_activate_me.setChecked(True)
+            self.menu_edit.insertAction(self.menu_edit.actions()[0], self.action_copy_pixmap)
+            self.menu_edit.insertAction(self.menu_edit.actions()[0], self.action_copy_filename)
+            self.menu_edit.insertAction(self.menu_edit.actions()[0], self.action_acme_me)
+            self.ctrl.set_last_viewer(self)
+            return True
+        elif event.type() == QEvent.WindowDeactivate:
+            self.action_activate_me.setChecked(False)
+            self.menu_edit.removeAction(self.action_copy_pixmap)
+            self.menu_edit.removeAction(self.action_copy_filename)
+            self.menu_edit.removeAction(self.action_acme_me)
+            return True
+        return QWidget.event(self, event)
 
     def activate_main_window(self):
         main_window = QApplication.instance().main_window
@@ -114,6 +161,12 @@ class Viewer(QLabel):
         gframe = main_window.gframe
         gframe.set_resource(self.current_resource)
         self.ctrl.set_last_viewer(self)
+
+    def activate_self(self):
+        self.view_control.activate_self()
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
 
     def toggle_control(self):
         if self.view_control.isActiveWindow():
@@ -160,6 +213,9 @@ class Viewer(QLabel):
     def copy_filename(self):
         QApplication.clipboard().setText(self.current_resource.filename())
 
+    def copy_pixmap(self):
+        QApplication.clipboard().setPixmap(self.pixmap)
+
     def show_exif_data(self):
         if self.current_resource.has_file():
             self.browser_window = BrowserWindow()
@@ -187,6 +243,7 @@ class Viewer(QLabel):
         if self.view_control is not None:
             self.view_control.close()
         self.menu_close_viewer.removeAction(self.action_close_me)
+        self.menu_window.removeAction(self.action_activate_me)
         event.accept()
 
     def persist(self):
@@ -247,7 +304,7 @@ class ViewControl(QWidget):
 
         self.toggle_scale_screen_size = QCheckBox("scale screen size")
         self.toggle_scale_screen_size.setChecked(self.viewer.scale_screen_size)
-        self.toggle_scale_screen_size.toggled.connect(self.on_toggle_screen_size)
+        self.toggle_scale_screen_size.toggled.connect(self.viewer.toggle_scale_screen_size)
         vbl_0.addWidget(self.toggle_scale_screen_size)
 
         self.toggle_max_height = QCheckBox("fixed max height", self)
@@ -299,6 +356,11 @@ class ViewControl(QWidget):
     def keyPressEvent(self, event: QKeyEvent):
         self.viewer.keyPressEvent(event)
 
+    def activate_self(self):
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
+
     def on_resource_changed(self, resource: Resource):
         self.setWindowTitle(self.viewer.current_resource.basename())
         self.lbl_current_resource.setText(self.viewer.current_resource.hyperlink(slv_index=True))
@@ -319,9 +381,6 @@ class ViewControl(QWidget):
         self.lbl_history_index.setText(str(self.viewer.current_resource.history_index()))
         self.toggle_max_height.setChecked(self.viewer.maximumHeight() != MAX_SIZE)
         self.toggle_max_width.setChecked(self.viewer.maximumWidth() != MAX_SIZE)
-
-    def on_toggle_screen_size(self, checked):
-        self.viewer.toggle_scale_screen_size(checked)
 
     def on_toggle_max_width(self, checked):
         self.viewer.toggle_max_width(checked)
@@ -355,9 +414,8 @@ class ViewerPopup(QMenu):
         self.action_preview.triggered.connect(viewer.open_in_preview)
         self.addAction(self.action_preview)
 
-        self.action_copy_filename = QAction("Copy filename", self)
-        self.action_copy_filename.triggered.connect(viewer.copy_filename)
-        self.addAction(self.action_copy_filename)
+        self.addAction(viewer.action_copy_filename)
+        self.addAction(viewer.action_copy_pixmap)
 
         self.action_exif_data = QAction("Show exif data", self)
         self.action_exif_data.triggered.connect(viewer.show_exif_data)
@@ -372,6 +430,5 @@ class ViewerPopup(QMenu):
     def on_resource_changed(self, resource: Resource):
         file_enabled = self.viewer.current_resource is not None
         self.action_preview.setEnabled(file_enabled)
-        self.action_copy_filename.setEnabled(file_enabled)
         self.action_exif_data.setEnabled(file_enabled)
 

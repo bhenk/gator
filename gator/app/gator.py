@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 import logging
 
+from PyQt5.QtCore import QEvent
 from PyQt5.QtGui import QCloseEvent, QKeyEvent
-from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QMenu
+from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QMenu, QWidget
 
 from app.ctrl import Ctrl
 from app.gframe import GFrame
@@ -46,6 +47,11 @@ class WMain(QMainWindow):
         action_exit.triggered.connect(QApplication.quit)
         self.ctrl.menu_file().addAction(action_exit)
 
+        self.action_activate_me = QAction("Gator", self)
+        self.action_activate_me.triggered.connect(self.activate_self)
+        self.action_activate_me.setCheckable(True)
+        self.ctrl.menu_window().addAction(self.action_activate_me)
+
         self.gframe = GFrame(self)
         self.setCentralWidget(self.gframe)
         self.move(self.ctrl.config.main_window_x(), self.ctrl.config.main_window_y())
@@ -53,6 +59,20 @@ class WMain(QMainWindow):
     def keyPressEvent(self, event: QKeyEvent):
         if GHotKey.matches(event):
             return
+
+    def activate_self(self):
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
+
+    def event(self, event: QEvent):
+        if event.type() == QEvent.WindowActivate:
+            self.action_activate_me.setChecked(True)
+            return True
+        elif event.type() == QEvent.WindowDeactivate:
+            self.action_activate_me.setChecked(False)
+            return True
+        return QWidget.event(self, event)
 
     def close(self):
         LOG.debug("Main window is closing")
