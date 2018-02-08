@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import csv
 import logging
+import operator
 import os
 import re
 import shutil
@@ -32,6 +33,12 @@ class DateStore(object):
     @abstractmethod
     def set_dates(self, resource: Resource, date_list: list):
         raise NotImplementedError
+
+    def append_dated(self, dated: list):
+        self.__dated_set.update(dated)
+
+    def clear_dated(self):
+        self.__dated_set.clear()
 
     def add_date_on(self, resource: Resource):
         if not(resource.filename() in self.__dated_set and self.__add_once):
@@ -73,6 +80,13 @@ class DateStore(object):
     def count_dates(self, filename):
         dates = self.bdb.get(filename)
         return 0 if dates is None else len(dates.split(env.LIST_SEP))
+
+    def history_items(self, threshold=0) -> [()]:
+        latest = self.bdb.get_keys_with_latest_values(threshold)
+        return sorted(latest.items(), key=operator.itemgetter(1))
+
+    def history_keys(self, threshold) -> []:
+        return [item[0] for item in self.history_items(threshold)]
 
 
 class AcmeDateStore(DateStore):

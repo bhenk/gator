@@ -5,7 +5,7 @@ import subprocess
 
 import exifread
 from PyQt5.QtCore import Qt, pyqtSignal, QEvent
-from PyQt5.QtGui import QPixmap, QKeyEvent, QCloseEvent, QMouseEvent, QFont, QResizeEvent
+from PyQt5.QtGui import QPixmap, QKeyEvent, QCloseEvent, QMouseEvent, QFont
 from PyQt5.QtWidgets import QLabel, QApplication, QWidget, QVBoxLayout, QCheckBox, QGridLayout, QPushButton, \
     QHBoxLayout, QLayout, QMenu, QAction, QFrame, QMessageBox
 
@@ -190,6 +190,9 @@ class Viewer(QLabel):
     def go_file_right(self):
         self.set_resource(self.navigator.go_right())
 
+    def go_file_start(self):
+        self.set_resource(self.navigator.go_start())
+
     def toggle_scale_screen_size(self, checked):
         self.scale_screen_size = checked
         self.set_resource(self.current_resource)
@@ -258,7 +261,7 @@ class ViewControl(QWidget):
         QWidget.__init__(self, None)
         self.viewer = viewer
         self.ctrl = QApplication.instance().ctrl
-        self.max_width = 160
+        self.max_width = 165
 
         vbl_0 = QVBoxLayout(self)
         vbl_0.setContentsMargins(10, 5, 0, 5)  # left, top, right, bottom
@@ -338,9 +341,11 @@ class ViewControl(QWidget):
         button_down.clicked.connect(self.viewer.go_file_down)
         grid.addWidget(button_down, 2, 1)
 
-        self.lbl_history_index = QLabel()
-        self.lbl_history_index.setAlignment(Qt.AlignCenter)
-        grid.addWidget(self.lbl_history_index, 1, 1)
+        self.btn_history_index = QPushButton(self)
+        # self.btn_history_index.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(0, 0, 0);")
+        # self.btn_history_index.setMaximumSize(40, 20)
+        self.btn_history_index.clicked.connect(self.viewer.go_file_start)
+        grid.addWidget(self.btn_history_index, 1, 1)
 
         hbox = QHBoxLayout()
         hbox.addLayout(grid)
@@ -361,6 +366,8 @@ class ViewControl(QWidget):
         self.raise_()
         self.activateWindow()
 
+    # https://stackoverflow.com/questions/3248243/gif-animation-in-qt
+    # http://doc.qt.io/qt-5/qml-qtquick-animatedimage.html
     def on_resource_changed(self, resource: Resource):
         self.setWindowTitle(self.viewer.current_resource.basename())
         self.lbl_current_resource.setText(self.viewer.current_resource.hyperlink(slv_index=True))
@@ -378,7 +385,8 @@ class ViewControl(QWidget):
         stat = self.viewer.navigator.stat_view_count()
         self.stat_view_views.set_stat(stat)
 
-        self.lbl_history_index.setText(str(self.viewer.current_resource.history_index()))
+        self.btn_history_index.setText(str(self.viewer.current_resource.history_index()))
+        self.btn_history_index.setEnabled(not self.viewer.navigator.is_at_start())
         self.toggle_max_height.setChecked(self.viewer.maximumHeight() != MAX_SIZE)
         self.toggle_max_width.setChecked(self.viewer.maximumWidth() != MAX_SIZE)
 

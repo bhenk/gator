@@ -9,11 +9,15 @@ LOGGING_CFG_FILE = "logging.conf"
 
 
 if __name__ == '__main__':
-    #locale.setlocale(locale.LC_ALL, 'nl_NL')
 
     if getattr(sys, 'frozen', False):
         # running in a bundle
-        application_home = sys._MEIPASS
+        try:
+            application_home = sys._MEIPASS
+        except Exception as err:
+            print(err)
+            application_home = os.path.dirname(".")
+            print("setting application home to:", application_home)
     else:
         application_home = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
@@ -38,7 +42,8 @@ if __name__ == '__main__':
     logging.config.fileConfig(log_conf, defaults={"log_file": log_file})
     # create a logger
     logger = logging.getLogger(__name__)
-    logger.info("Initialized logging: %s" % log_file)
+    logger.info("Initialized logging from configuration %s", log_conf)
+    logger.info("Logs are at: %s" % log_file)
     logger.info("\n"
     "     _____    ___________   ______   ______\n"
     "    / ___/   /   ___  ___| / __   | / __  |\n"
@@ -47,7 +52,7 @@ if __name__ == '__main__':
     " / /__| | / ___  |  | | / /__/ / /  / | |  \n"
     " |______//_/   |_|  |_| |_____/ /__/  |_|  \n\n")
 
-    logger.info("home: %s" % application_home)
+    logger.info("HOME: %s" % application_home)
 
     # create the application
     from app.gator import Gator

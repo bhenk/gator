@@ -9,9 +9,13 @@ from statistics import mean, harmonic_mean, median, median_low, median_high, std
 def application_home():
     if getattr(sys, 'frozen', False):
         # running in a bundle
-        return sys._MEIPASS
+        try:
+            _app_home = sys._MEIPASS
+        except Exception as err:
+            _app_home = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     else:
-        return os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        _app_home = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    return  _app_home
 
 
 def chunk_string(string, length):

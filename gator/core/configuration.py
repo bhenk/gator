@@ -1,13 +1,29 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Classes and methods useful for persisting configuration in an OS-specific location on the file system.
+"""
 import os
 import platform
 from configparser import ConfigParser
 
-INIT_CFG_DIR_NAME = "gator"
+#: The application-specific part of the configuration directory path.
+CFG_DIR_NAME = "gator"
 
 
-def find_config_dir(dir_name="conf"):
+def find_config_dir(dir_name="conf") -> str:
+    """
+    Find an OS-dependent location for the configuration files.
+    If no OS-dependent location can be found, the user home directory is used.
+    The returned configuration directory is on the path::
+
+        {os-dependent location}/CFG_DIR_NAME/{dir_name}
+
+    If the configuration directory does not exist it will be created.
+
+    :param str dir_name: name of the last directory in the path name (default 'conf')
+    :return: the os-dependent configuration directory
+    """
     config_dir = os.path.expanduser("~")
     op_sys = platform.system()
     if op_sys == "Windows":
@@ -22,36 +38,76 @@ def find_config_dir(dir_name="conf"):
         if not os.path.exists(lin_path): os.makedirs(lin_path)
         if os.path.exists(lin_path): config_dir = lin_path
 
-    config_dir = os.path.join(config_dir, INIT_CFG_DIR_NAME, dir_name)
+    config_dir = os.path.join(config_dir, CFG_DIR_NAME, dir_name)
     if not os.path.exists(config_dir):
         os.makedirs(config_dir)
     return config_dir
 
 
 class PathFinder(object):
+    """
+    Finds and maintains a file containing a list of path names in the configuration directory.
+    """
 
     def __init__(self, dir_name="init", file_name="paths.txt"):
-        self.config_dir = find_config_dir(dir_name)
-        self.config_file = os.path.join(self.config_dir, file_name)
+        """
+        Initialize a :class:`PathFinder`. After initialization the path finder file will be
+        on the file system. With default values for parameters::
+
+            {configuration directory}/gator/init/paths.txt
+
+        After initialization the :class:`PathFinder` has at least
+        a default path for a configuration. This configuration file will be
+        created on the file system::
+
+            {configuration directory}/gator/init/gator.cfg
+
+        :param str dir_name: the name of the directory within the configuration directory
+            to store the list of paths (default 'init')
+        :param str file_name: the name of the file with paths (default 'paths.txt')
+        """
+        config_dir = find_config_dir(dir_name)
+        self.__config_file = os.path.join(config_dir, file_name)
         self.__path_list = []
-        self.read()
+        self._read()
         GatorConf(self.rescue_config_file()).persist()
         self.append_conditionally(self.rescue_config_file())
 
-    def read(self):
-        if os.path.exists(self.config_file):
-            with open(self.config_file) as pf:
+    def _read(self):
+        if os.path.exists(self.__config_file):
+            with open(self.__config_file) as pf:
                 self.__path_list = pf.read().splitlines()
 
+    def config_file(self) -> str:
+        return self.__config_file
+
+    def config_dir(self) -> str:
+        return os.path.dirname(self.__config_file)
+
     def persist(self):
-        with open(self.config_file, "w") as pf:
+        """
+        Save the current path list.
+        """
+        with open(self.__config_file, "w") as pf:
             for path in self.__path_list:
                 pf.write("%s\n" % path)
 
-    def path_list(self):
+    def path_list(self) -> list:
+        """
+        Get the list of paths.
+
+        :return: the list of paths
+        """
         return self.__path_list
 
     def set_path_list(self, path_list: list):
+        """
+        Set the list of paths. Existing paths will be removed.
+        After this method the path list has at least a default path for a
+        configuration.
+
+        :param list path_list: list with paths
+        """
         self.__path_list.clear()
         self.__path_list = path_list
         self.append_conditionally(self.rescue_config_file())
@@ -70,13 +126,18 @@ class PathFinder(object):
         if path not in self.__path_list:
             self.insert(index, path)
 
-    def rescue_config_file(self):
-        return os.path.join(self.config_dir, "gator.cfg")
+    def rescue_config_file(self) -> str:
+        """
+        Compose a default path for a configuration.
 
-    def existing_files(self):
+        :return: a default path for a configuration
+        """
+        return os.path.join(self.config_dir(), "gator.cfg")
+
+    def existing_files(self) -> list:
         return [f for f in self.__path_list if os.path.exists(f) and os.path.isfile(f)]
 
-    def existing_dirs(self):
+    def existing_dirs(self) -> list:
         return [os.path.dirname(f) for f in self.__path_list if os.path.exists(os.path.dirname(f))]
 
     def first_existing_dir(self):
@@ -86,7 +147,12 @@ class PathFinder(object):
         else:
             return existing_dirs[0]
 
-    def first_existing_file(self):
+    def first_existing_file(self) -> str:
+        """
+        Always returns a configuration file.
+
+        :return: configuration file, never `None`
+        """
         existing_files = self.existing_files()
         if len(existing_files) == 0:
             rescue_config_file = self.rescue_config_file()
@@ -98,20 +164,20 @@ class PathFinder(object):
         else:
             return existing_files[0]
 
-    def index(self, configuration_file):
+    def index(self, configuration_file) -> int:
         if configuration_file in self.__path_list:
             return self.__path_list.index(configuration_file)
         else:
             return -1
 
-    def file_exists(self, index):
+    def file_exists(self, index) -> bool:
         if index < 0 or index > len(self.__path_list) - 1:
             return False
         else:
             filename = self.__path_list[index]
             return os.path.exists(filename)
 
-    def dir_exists(self, index):
+    def dir_exists(self, index) -> bool:
         if index < 0 or index > len(self.__path_list) - 1:
             return False
         else:

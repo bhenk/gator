@@ -83,8 +83,13 @@ class Navigator(object):
         stat = self.stat_view_count()
         self.__min_views = stat.min()
         LOG.info("view stats: %s" % stat.to_string(join=" | "))
-        self.__history_list = list()
-        self.__history_index = 0
+        self.__history_list = self.__store.view_date_store().history_keys(self.__min_views)
+        self.__store.view_date_store().append_dated(self.__history_list)
+        if len(self.__history_list) >= self.__size:
+            self.__history_list.clear()
+            self.__store.view_date_store().clear_dated()
+        self.__history_index = len(self.__history_list)
+        self.__start_index = self.__history_index
         self.__index = -1
         if filename and filename in self.__resources.resource_list():
             self.__index = self.__resources.get_index(filename)
@@ -96,12 +101,6 @@ class Navigator(object):
 
     def current_resource(self) -> Resource:
         return self.__current_resource
-
-    def current_file(self):
-        return self.__current_file
-
-    def current_min_views(self):
-        return self.__min_views
 
     def stat_view_count(self)-> Stat:
         sequence = self.__store.view_date_store().sequence_count(total=self.__size)
@@ -118,8 +117,9 @@ class Navigator(object):
             self.__index = random.randint(0, self.__size - 1)
             filename = self.__resources.get_resource(self.__index)
             views = self.__store.view_date_store().count_dates(filename)
+            tries = 0
             while views > self.__min_views:
-                LOG.debug("%d views > %d min views for %s" % (views, self.__min_views, filename))
+                tries += 1
                 self.__index += 1
                 if self.__index >= self.__size:
                     self.__index = 0
@@ -130,9 +130,20 @@ class Navigator(object):
                     self.__min_views = minimal_views
                 filename = self.__resources.get_resource(self.__index)
                 views = self.__store.view_date_store().count_dates(filename)
+            if tries > 0:
+                LOG.debug("Found filename after %d tries. __min_views=%d" % (tries, self.__min_views))
             return filename
         else:
             return None
+
+    def is_at_start(self):
+        return self.__history_index == self.__start_index
+
+    def go_start(self):
+        self.__history_index = self.__start_index
+        self.__current_file = self.__history_list[self.__history_index]
+        self.__index = self.__resources.get_index(self.__current_file)
+        return self.__create_resource()
 
     def go_down(self):
         self.__history_index += 1

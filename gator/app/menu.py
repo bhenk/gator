@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
-from PyQt5.QtWidgets import QMenuBar, QAction, QApplication, QMenu
+from PyQt5.QtWidgets import QMenuBar, QAction, QMenu
 
 
 class GMenuBar(QMenuBar):

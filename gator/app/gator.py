@@ -6,6 +6,7 @@ from PyQt5.QtCore import QEvent
 from PyQt5.QtGui import QCloseEvent, QKeyEvent
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QMenu, QWidget
 
+import version
 from app.ctrl import Ctrl
 from app.gframe import GFrame
 from gwid.util import GHotKey
@@ -18,14 +19,16 @@ class Gator(QApplication):
 
     def __init__(self, *args, gator_config=None):
         QApplication.__init__(self, *args)
-        LOG.info("Gator started")
+        LOG.info("Gator version = %s | release date: %s" % (version.__version__, version.__release_date__))
         self.ctrl = Ctrl(gator_config)
 
         self.main_window = WMain()
-        #self.main_window = GMainWindow()
         self.aboutToQuit.connect(self.__before_close__)
 
     def __before_close__(self):
+        """
+        Give child widgets a chance to clean up.
+        """
         LOG.info("Closing Gator")
         self.main_window.close()
         LOG.info("Gator closed")

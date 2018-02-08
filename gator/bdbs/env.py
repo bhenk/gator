@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 import logging
+import operator
 import os
 
 from bsddb3 import db
@@ -70,6 +71,14 @@ class BDB(DB):
     def put_list(self, key, data, txn=None, flags=0, dlen=-1, doff=-1):
         value = LIST_SEP.join(data)
         self.put(key, value, txn, flags, dlen, doff)
+
+    def get_keys_with_latest_values(self, threshold=0, txn=None) -> dict:
+        latest = dict()
+        for item in self.items_decoded(txn):
+            items = item[1].split(LIST_SEP)
+            if len(items) > threshold:
+                latest[item[0]] = items[-1]
+        return latest
 
 
 class Repository(object):
