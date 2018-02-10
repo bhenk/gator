@@ -139,29 +139,29 @@ class Navigator(object):
     def is_at_start(self):
         return self.__history_index == self.__start_index
 
+    def go_history_start(self):
+        return self.__set_history_index(0)
+
     def go_start(self):
-        self.__history_index = self.__start_index
-        self.__current_file = self.__history_list[self.__history_index]
-        self.__index = self.__resources.get_index(self.__current_file)
-        return self.__create_resource()
+        return self.__set_history_index(self.__start_index)
+
+    def go_history_end(self):
+        return self.__set_history_index(len(self.__history_list) - 1)
 
     def go_down(self):
         self.__history_index += 1
         if self.__history_index > len(self.__history_list) - 1:
             self.__current_file = self.__random_file()
             self.__history_list.append(self.__current_file)
+            return self.__create_resource()
         else:
-            self.__current_file = self.__history_list[self.__history_index]
-            self.__index = self.__resources.get_index(self.__current_file)
-        return self.__create_resource()
+            return self.__set_history_index(self.__history_index)
 
     def go_up(self):
         self.__history_index -= 1
         if self.__history_index < 0:
             self.__history_index = 0
-        self.__current_file = self.__history_list[self.__history_index]
-        self.__index = self.__resources.get_index(self.__current_file)
-        return self.__create_resource()
+        return self.__set_history_index(self.__history_index)
 
     def go_left(self):
         self.__index -= 1
@@ -181,10 +181,14 @@ class Navigator(object):
         self.__history_list.append(self.__current_file)
         return self.__create_resource()
 
+    def __set_history_index(self, hist_index):
+        self.__history_index = hist_index
+        self.__current_file = self.__history_list[self.__history_index]
+        self.__index = self.__resources.get_index(self.__current_file)
+        return self.__create_resource()
+
     def __create_resource(self) -> Resource:
         self.__current_resource = Resource(self.__current_file, self.__index, self.__history_index)
         self.__store.acme_date_store().update(self.__current_resource)
         self.__store.view_date_store().update(self.__current_resource)
         return self.__current_resource
-
-# strategy acme, last viewed (history back),

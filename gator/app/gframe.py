@@ -76,20 +76,24 @@ class GFrame(QFrame):
 
         action_open_file = QAction("Open file...", self)
         action_open_file.setShortcut("Ctrl+O")
+        action_open_file.setIcon(GIcon.open_file())
         action_open_file.triggered.connect(self.on_open_file)
         self.menu_file.insertAction(self.menu_file.actions()[0], action_open_file)
 
         action_new_viewer = QAction("New &viewer", self)
+        action_new_viewer.setIcon(GIcon.viewer_white())
         action_new_viewer.setShortcut("Ctrl+V")
         action_new_viewer.triggered.connect(self.on_btn_viewer_clicked)
         self.menu_view.addAction(action_new_viewer)
 
         self.menu_edit.addSeparator()
         action_show_configuration = QAction("Gator cfg...", self)
+        action_show_configuration.setIcon(GIcon.configuration())
         action_show_configuration.triggered.connect(self.show_configuration_window)
         self.menu_edit.addAction(action_show_configuration)
 
         action_show_resources = QAction("Resources...", self)
+        action_show_resources.setIcon(GIcon.resources())
         action_show_resources.triggered.connect(self.show_resources_window)
         self.menu_edit.addAction(action_show_resources)
 

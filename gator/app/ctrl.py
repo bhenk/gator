@@ -78,6 +78,15 @@ class Ctrl(QObject):
         """
         return self.__menu_bar.menu_edit
 
+    def menu_navigate(self) -> QMenu:
+        """
+        Handle for the `Navigate` menu.
+        :return: The `Navigate` menu.
+        @rtype : QMenu
+        """
+        return self.__menu_bar.menu_navigate
+
+
     def menu_window(self) -> QMenu:
         """
         Handle for the `Window` menu.

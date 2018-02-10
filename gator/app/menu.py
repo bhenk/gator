@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 from PyQt5.QtWidgets import QMenuBar, QAction, QMenu
 
+from gwid.util import GIcon
+
 
 class GMenuBar(QMenuBar):
 
@@ -12,10 +14,13 @@ class GMenuBar(QMenuBar):
         #self.menu_file.aboutToShow.connect(self.on_menu_file_about_to_show)
         self.menu_edit = self.addMenu("Edit")
         self.menu_view = self.addMenu("View")
+        self.menu_navigate = self.addMenu("Navigate")
         self.menu_window = self.addMenu("Window") # type: QMenu
 
         self.menu_close_viewer = self.menu_file.addMenu("Close viewer")
+        self.menu_close_viewer.setIcon(GIcon.close_view())
         self.action_close_viewers = QAction("Close all viewers", self)
+        self.action_close_viewers.setIcon(GIcon.close_views())
         self.action_close_viewers.triggered.connect(self.on_close_all_viewers)
         self.menu_file.addAction(self.action_close_viewers)
 

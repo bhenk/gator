@@ -44,30 +44,64 @@ class Viewer(QLabel):
 
         self.move(self.ctrl.config.viewer_window_x(), self.ctrl.config.viewer_window_y())
         self.pixmap = None
+        self.menu_actions_set = False
 
         # actions
         self.menu_close_viewer = self.ctrl.menu_close_viewer()  # type: QMenu
         self.menu_edit = self.ctrl.menu_edit()  # type: QMenu
+        self.menu_navigate = self.ctrl.menu_navigate()  # type: QMenu
         self.menu_window = self.ctrl.menu_window()  # type: QMenu
 
         self.action_close_me = QAction("no name", self)
+        self.action_close_me.setCheckable(True)
         self.action_close_me.triggered.connect(self.close)
         self.menu_close_viewer.addAction(self.action_close_me)
 
         self.action_acme_me = QAction("Acme me", self)
+        self.action_acme_me.setIcon(GIcon.acme())
         self.action_acme_me.setShortcut("Ctrl+A")
         self.action_acme_me.triggered.connect(self.acme_me)
 
         self.action_copy_filename = QAction("Copy filename")
+        self.action_copy_filename.setIcon(GIcon.copy_filename())
         self.action_copy_filename.triggered.connect(self.copy_filename)
 
         self.action_copy_pixmap = QAction("Copy image")
+        self.action_copy_pixmap.setIcon(GIcon.copy_image())
         self.action_copy_pixmap.triggered.connect(self.copy_pixmap)
 
         self.action_activate_me = QAction("no name", self)
         self.action_activate_me.triggered.connect(self.activate_self)
         self.action_activate_me.setCheckable(True)
         self.menu_window.addAction(self.action_activate_me)
+
+        self.action_go_up = QAction("Up", self)
+        self.action_go_up.setIcon(GIcon.arrow_white_up())
+        self.action_go_up.triggered.connect(self.go_file_up)
+
+        self.action_go_left = QAction("Left", self)
+        self.action_go_left.setIcon(GIcon.arrow_white_left())
+        self.action_go_left.triggered.connect(self.go_file_left)
+
+        self.action_go_right = QAction("Right", self)
+        self.action_go_right.setIcon(GIcon.arrow_white_right())
+        self.action_go_right.triggered.connect(self.go_file_right)
+
+        self.action_go_down = QAction("Down", self)
+        self.action_go_down.setIcon(GIcon.arrow_white_down())
+        self.action_go_down.triggered.connect(self.go_file_down)
+
+        self.action_go_start = QAction("Start", self)
+        self.action_go_start.setIcon(GIcon.zero_white())
+        self.action_go_start.triggered.connect(self.go_file_start)
+
+        self.action_go_history_start = QAction("History start", self)
+        self.action_go_history_start.setIcon(GIcon.history_start())
+        self.action_go_history_start.triggered.connect(self.go_file_history_start)
+
+        self.action_go_history_end = QAction("History end", self)
+        self.action_go_history_end.setIcon(GIcon.history_end())
+        self.action_go_history_end.triggered.connect(self.go_file_history_end)
 
         self.current_resource = None  # type: Resource
         self.set_resource(self.navigator.current_resource())
@@ -139,19 +173,46 @@ class Viewer(QLabel):
 
     def event(self, event: QEvent):
         if event.type() == QEvent.WindowActivate:
-            self.action_activate_me.setChecked(True)
-            self.menu_edit.insertAction(self.menu_edit.actions()[0], self.action_copy_pixmap)
-            self.menu_edit.insertAction(self.menu_edit.actions()[0], self.action_copy_filename)
-            self.menu_edit.insertAction(self.menu_edit.actions()[0], self.action_acme_me)
+            self.set_menu_actions()
             self.ctrl.set_last_viewer(self)
             return True
         elif event.type() == QEvent.WindowDeactivate:
+            self.reset_menu_actions()
+            return True
+        return QWidget.event(self, event)
+
+    def set_menu_actions(self):
+        if not self.menu_actions_set and (self.view_control.isActiveWindow() or self.isActiveWindow()):
+            self.action_activate_me.setChecked(True)
+            self.action_close_me.setChecked(True)
+            self.menu_edit.insertAction(self.menu_edit.actions()[0], self.action_copy_pixmap)
+            self.menu_edit.insertAction(self.menu_edit.actions()[0], self.action_copy_filename)
+            self.menu_edit.insertAction(self.menu_edit.actions()[0], self.action_acme_me)
+            self.menu_navigate.addAction(self.action_go_history_start)
+            self.menu_navigate.addAction(self.action_go_start)
+            self.menu_navigate.addAction(self.action_go_history_end)
+            self.menu_navigate.addSeparator()
+            self.menu_navigate.addAction(self.action_go_up)
+            self.menu_navigate.addAction(self.action_go_left)
+            self.menu_navigate.addAction(self.action_go_right)
+            self.menu_navigate.addAction(self.action_go_down)
+            self.menu_actions_set = True
+
+    def reset_menu_actions(self):
+        if self.menu_actions_set and not (self.view_control.isActiveWindow() or self.isActiveWindow()):
             self.action_activate_me.setChecked(False)
+            self.action_close_me.setChecked(False)
             self.menu_edit.removeAction(self.action_copy_pixmap)
             self.menu_edit.removeAction(self.action_copy_filename)
             self.menu_edit.removeAction(self.action_acme_me)
-            return True
-        return QWidget.event(self, event)
+            self.menu_navigate.removeAction(self.action_go_up)
+            self.menu_navigate.removeAction(self.action_go_left)
+            self.menu_navigate.removeAction(self.action_go_right)
+            self.menu_navigate.removeAction(self.action_go_down)
+            self.menu_navigate.removeAction(self.action_go_start)
+            self.menu_navigate.removeAction(self.action_go_history_start)
+            self.menu_navigate.removeAction(self.action_go_history_end)
+            self.menu_actions_set = False
 
     def activate_main_window(self):
         main_window = QApplication.instance().main_window
@@ -192,6 +253,12 @@ class Viewer(QLabel):
 
     def go_file_start(self):
         self.set_resource(self.navigator.go_start())
+
+    def go_file_history_start(self):
+        self.set_resource(self.navigator.go_history_start())
+
+    def go_file_history_end(self):
+        self.set_resource(self.navigator.go_history_end())
 
     def toggle_scale_screen_size(self, checked):
         self.scale_screen_size = checked
@@ -245,8 +312,6 @@ class Viewer(QLabel):
         self.persist()
         if self.view_control is not None:
             self.view_control.close()
-        self.menu_close_viewer.removeAction(self.action_close_me)
-        self.menu_window.removeAction(self.action_activate_me)
         event.accept()
 
     def persist(self):
@@ -342,8 +407,6 @@ class ViewControl(QWidget):
         grid.addWidget(button_down, 2, 1)
 
         self.btn_history_index = QPushButton(self)
-        # self.btn_history_index.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(0, 0, 0);")
-        # self.btn_history_index.setMaximumSize(40, 20)
         self.btn_history_index.clicked.connect(self.viewer.go_file_start)
         grid.addWidget(self.btn_history_index, 1, 1)
 
@@ -357,6 +420,15 @@ class ViewControl(QWidget):
 
         self.move(self.ctrl.config.viewer_control_window_x(), self.ctrl.config.viewer_control_window_y())
         self.show()
+
+    def event(self, event: QEvent):
+        if event.type() == QEvent.WindowActivate:
+            self.viewer.set_menu_actions()
+            return True
+        elif event.type() == QEvent.WindowDeactivate:
+            self.viewer.reset_menu_actions()
+            return True
+        return QWidget.event(self, event)
 
     def keyPressEvent(self, event: QKeyEvent):
         self.viewer.keyPressEvent(event)

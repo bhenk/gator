@@ -48,7 +48,61 @@ class GIcon(object):
     def arr_down(): return icon("arrow1-down.png")
 
     @staticmethod
-    def viewer(): return icon("photo-camera.png")
+    def open_file(): return icon("view-files.png")
+
+    @staticmethod
+    def close_view(): return icon("window-close.png")
+
+    @staticmethod
+    def close_views(): return icon("windows-close.png")
+
+    @staticmethod
+    def exit(): return icon("exit.png")
+
+    @staticmethod
+    def acme(): return icon("snowy-mountains.png")
+
+    @staticmethod
+    def copy_image(): return icon("security-copy.png")
+
+    @staticmethod
+    def copy_filename(): return icon("copy-filename.png")
+
+    @staticmethod
+    def configuration(): return icon("wrench.png")
+
+    @staticmethod
+    def resources(): return icon("open-folder.png")
+
+    @staticmethod
+    def viewer(): return icon("open-eye-black.png")
+
+    @staticmethod
+    def viewer_white(): return icon("open-eye.png")
+
+    @staticmethod
+    def gator(): return icon("chinese-door.png")
+
+    @staticmethod
+    def arrow_white_up(): return icon("arrow_small_w_up.png")
+
+    @staticmethod
+    def arrow_white_left(): return icon("arrow_small_w_left.png")
+
+    @staticmethod
+    def arrow_white_right(): return icon("arrow_small_w_right.png")
+
+    @staticmethod
+    def arrow_white_down(): return icon("arrow_small_w_down.png")
+
+    @staticmethod
+    def zero_white(): return icon("zero.png")
+
+    @staticmethod
+    def history_start(): return icon("arrow_end_up.png")
+
+    @staticmethod
+    def history_end(): return icon("arrow_end_down.png")
 
 
 class GHotKey():

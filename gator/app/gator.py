@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QMenu, QWidget
 import version
 from app.ctrl import Ctrl
 from app.gframe import GFrame
-from gwid.util import GHotKey
+from gwid.util import GHotKey, GIcon
 
 LOG = logging.getLogger(__name__)
 
@@ -45,12 +45,14 @@ class WMain(QMainWindow):
         self.setMenuBar(self.ctrl.menu_bar())
         self.menu_file = self.ctrl.menu_file()  # type: QMenu
 
-        action_exit = QAction("3&xit Gator", self)
+        action_exit = QAction("Exit Gator", self)
+        action_exit.setIcon(GIcon.exit())
         action_exit.setShortcut("Ctrl+X")
         action_exit.triggered.connect(QApplication.quit)
         self.ctrl.menu_file().addAction(action_exit)
 
         self.action_activate_me = QAction("Gator", self)
+        self.action_activate_me.setIcon(GIcon.gator())
         self.action_activate_me.triggered.connect(self.activate_self)
         self.action_activate_me.setCheckable(True)
         self.ctrl.menu_window().addAction(self.action_activate_me)

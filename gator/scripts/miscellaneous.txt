@@ -1,0 +1,4 @@
+====
+Find unused code, filter on module
+====
+python3 -m vulture . --exclude build,dist | grep bdbs/store

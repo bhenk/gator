@@ -36,28 +36,38 @@ class Stat(object):
 
     def __init__(self, sequence):
         self.__sequence = [0] if len(sequence) == 0 else sequence
+        self.__len_seq = len(self.__sequence)
+        self.__min = min(self.__sequence)
+        self.__len_min = len([x for x in self.__sequence if x == self.__min])
+        self.__max = max(self.__sequence)
+        self.__len_max = len([x for x in self.__sequence if x == self.__max])
+        self.__mean = mean(self.__sequence)
+        self.__median = median(self.__sequence)
+        self.__stdev = -1 if len(self.__sequence) < 2 else stdev(self.__sequence)
 
-    def len(self):
-        return len(self.__sequence)
+    def len_seq(self):
+        return self.__len_seq
 
     def len_min(self):
-        m = self.min()
-        return len([x for x in self.__sequence if x == m])
+        return self.__len_min
 
     def min(self):
-        return min(self.__sequence)
+        return self.__min
 
     def max(self):
-        return max(self.__sequence)
+        return self.__max
+
+    def len_max(self):
+        return self.__len_max
 
     def mean(self):
-        return mean(self.__sequence)
+        return self.__mean
 
     def harmonic_mean(self):
         return harmonic_mean(self.__sequence)
 
     def median(self):
-        return median(self.__sequence)
+        return self.__median
 
     def median_low(self):
         return median_low(self.__sequence)
@@ -66,20 +76,20 @@ class Stat(object):
         return median_high(self.__sequence)
 
     def stdev(self):
-        return -1 if len(self.__sequence) < 2 else stdev(self.__sequence)
+        return self.__stdev
 
     def pstdev(self):
         return pstdev(self.__sequence)
 
     def to_dict(self):
-        return { "len": self.len(),
-                 "len_min": self.len_min(),
-                 "min": self.min(),
-                 "max": self.max(),
-                 "mean": self.mean(),
-                 "median": self.median(),
-                 "stdev": self.stdev(),
-                 "pstdev": self.pstdev()}
+        return { "len_seq": self.__len_seq,
+                 "len_min": self.__len_min,
+                 "min": self.__min,
+                 "len_max": self.__len_max,
+                 "max": self.__max,
+                 "mean": self.__mean,
+                 "median": self.__median,
+                 "stdev": self.__stdev}
 
     def to_string(self, join="\n", decimals=2):
         f = "{0:." + str(decimals) + "f}"

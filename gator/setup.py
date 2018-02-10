@@ -9,12 +9,11 @@ from setuptools import setup
 
 APP = ['app/appstart.py']
 DATA_FILES = [('', ['conf']),
-              ('', ['img']),
-              ('', ['gator.icns'])]
+              ('', ['img'])]
 OPTIONS = dict(py2app=dict(
     plist=dict(
         NSHumanReadableCopyright="© gendan vehnberk",
-        CFBundleIconFile="gator.icns"
+        CFBundleIconFile="img/gator.icns"
     ),
 ))
 
