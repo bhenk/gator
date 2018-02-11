@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 import logging
-import operator
 import os
 
 from bsddb3 import db

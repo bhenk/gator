@@ -63,3 +63,15 @@ class TestViewDateStore(unittest.TestCase):
     def test_replicate(self):
         store = Store("/Volumes/Backup/20171217/gator2/db")
         store.replicate()
+
+    # def test_correctie(self):
+    #     store = Store("/Volumes/Backup/20171217/gator2/db")
+    #     ads = store.acme_date_store()
+    #     rem = []
+    #     for item in ads.bdb.items_decoded():
+    #         key1 = item[0]
+    #         if key1.startswith("/Volumes/Backup/20170412/quinter"):
+    #             key2 = key1.replace("/Volumes/Backup/20170412/quinter", "/Volumes/Backup/20171217/quinter")
+    #             print(key1, " >  ", key2)
+    #             ads.bdb.delete(item[0])
+    #             ads.bdb.put(key2, item[1])

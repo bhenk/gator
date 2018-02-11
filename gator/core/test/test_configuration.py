@@ -1,11 +1,8 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os
-import shutil
 import unittest
 
 from core import configuration
-from core.configuration import PathFinder, GatorConf
 
 
 class TestGlobals(unittest.TestCase):

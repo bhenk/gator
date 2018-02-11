@@ -12,7 +12,7 @@ from app.style import Style
 from app.viewer import Viewer
 from bdbs.obj import Resource
 from core.configuration import PathFinder, GatorConf
-from core.navigator import Resources, Navigator
+from core.navigator import Universe, Navigator
 from core.services import Format
 from gwid.gwidget import ClickableLabel
 from gwid.listdialog import GPathListDialog
@@ -31,12 +31,12 @@ class GFrame(QFrame):
 
         self.ctrl = QApplication.instance().ctrl
         self.ctrl.sgn_switch_configuration.connect(self.on_sgn_switch_configuration)
-        self.ctrl.sgn_switch_resources.connect(self.on_sgn_switch_resources)
+        self.ctrl.sgn_switch_universe.connect(self.on_sgn_switch_universe)
         self.ctrl.sgn_main_window_closing.connect(self.on_main_window_closing)
 
         self.path_finder = self.ctrl.path_finder  # type: PathFinder
         self.config = self.ctrl.config  # type: GatorConf
-        self.resources = self.ctrl.resources  # type: Resources
+        self.universe = self.ctrl.universe  # type: Universe
 
         vbl0 = QVBoxLayout(self)
         vbl0.setSpacing(5)
@@ -60,14 +60,14 @@ class GFrame(QFrame):
         self.btn_viewer.setShortcut(self.ctrl_v)
         self.btn_viewer.setIcon(GIcon.viewer())
         self.btn_viewer.clicked.connect(self.on_btn_viewer_clicked)
-        self.lbl_resources_count = QLabel(self.resources.to_string())
-        self.lbl_resources_count.setStyleSheet(Style.green_text() + Style.bold())
+        self.lbl_universe = QLabel(self.universe.to_string())
+        self.lbl_universe.setStyleSheet(Style.green_text() + Style.bold())
 
-        btn_resources = QPushButton("...")
-        btn_resources.clicked.connect(self.show_resources_window)
+        btn_universe = QPushButton("...")
+        btn_universe.clicked.connect(self.show_universe_window)
         grid.addWidget(self.btn_viewer, 1, 0)
-        grid.addWidget(self.lbl_resources_count, 1, 1)
-        grid.addWidget(btn_resources, 1, 2)
+        grid.addWidget(self.lbl_universe, 1, 1)
+        grid.addWidget(btn_universe, 1, 2)
 
         # actions
         self.menu_file = self.ctrl.menu_file()  # type: QMenu
@@ -92,12 +92,12 @@ class GFrame(QFrame):
         action_show_configuration.triggered.connect(self.show_configuration_window)
         self.menu_edit.addAction(action_show_configuration)
 
-        action_show_resources = QAction("Resources...", self)
-        action_show_resources.setIcon(GIcon.resources())
-        action_show_resources.triggered.connect(self.show_resources_window)
-        self.menu_edit.addAction(action_show_resources)
+        action_show_universe = QAction("Universe...", self)
+        action_show_universe.setIcon(GIcon.universe())
+        action_show_universe.triggered.connect(self.show_universe_window)
+        self.menu_edit.addAction(action_show_universe)
 
-        self.next_navigator = Navigator(self.ctrl.store, self.resources)
+        self.next_navigator = Navigator(self.ctrl.store, self.universe)
         first_resource = self.next_navigator.current_resource()
         self.image_frame = ResourceWidget(self, first_resource, 200)
         vbl0.addWidget(self.image_frame, 1)
@@ -131,32 +131,32 @@ class GFrame(QFrame):
     def on_sgn_switch_configuration(self):
         LOG.debug("sgn_switch_configuration received")
         self.config = self.ctrl.config  # type: GatorConf
-        self.resources = self.ctrl.resources  # type: Resources
+        self.universe = self.ctrl.universe  # type: Universe
         self.path_combo.setCurrentIndex(self.ctrl.configuration_index)
-        self.lbl_resources_count.setText(self.resources.to_string())
+        self.lbl_universe.setText(self.universe.to_string())
 
-    # ##### resources #####
-    def on_sgn_switch_resources(self):
-        LOG.debug("sgn_switch_resources received")
-        self.resources = self.ctrl.resources  # type: Resources
-        self.lbl_resources_count.setText(self.resources.to_string())
-        self.btn_viewer.setEnabled(self.resources.resource_count() > 0)
+    # ##### universe #####
+    def on_sgn_switch_universe(self):
+        LOG.debug("sgn_switch_universe received")
+        self.universe = self.ctrl.universe  # type: Universe
+        self.lbl_universe.setText(self.universe.to_string())
+        self.btn_viewer.setEnabled(self.universe.filename_count() > 0)
 
-    def show_resources_window(self):
-        pd = GPathListDialog(self, self.resources.path_list(), window_title="Resources",
+    def show_universe_window(self):
+        pd = GPathListDialog(self, self.universe.path_list(), window_title="Universe",
                              mode=GPathListDialog.MODE_EXISTING_DIRECTORY,
                              start_path=os.path.dirname(self.ctrl.gator_home), allow_duplicates=True)
         pd.deleteLater()
         if pd.exec():
-            self.config.set_resources(pd.str_list())
+            self.config.set_universe_list(pd.str_list())
             self.config.persist()
-            self.ctrl.switch_resources()
+            self.ctrl.switch_universe()
 
     # ##### viewers #####
     def on_btn_viewer_clicked(self, *args):
         # first viewer is created with navigator used for ResourceWidget
         if self.next_navigator is None:
-            self.next_navigator = Navigator(self.ctrl.store, self.resources)
+            self.next_navigator = Navigator(self.ctrl.store, self.universe)
         Viewer(self, self.next_navigator)
         self.next_navigator = None
 
@@ -167,14 +167,14 @@ class GFrame(QFrame):
         LOG.debug("Received signal main window closing")
 
     def on_open_file(self, *args):
-        common_prefix = self.resources.common_prefix()
+        common_prefix = self.universe.common_prefix()
         LOG.debug("Get open filename from %s" % common_prefix)
-        filename = QFileDialog.getOpenFileName(self, "Open File", common_prefix, filter=Resources.filter_list())
+        filename = QFileDialog.getOpenFileName(self, "Open File", common_prefix, filter=Universe.filter_list())
         if filename[0] != "":
-            if filename[0] in self.resources.resource_list():
-                Viewer(self, Navigator(self.ctrl.store, self.resources, filename[0]))
+            if filename[0] in self.universe.filename_list():
+                Viewer(self, Navigator(self.ctrl.store, self.universe, filename[0]))
             else:
-                self.ctrl.info("%s not in resource list" % filename[0])
+                self.ctrl.info("%s not in this universe" % filename[0])
 
 
 # ##### ##########################################################

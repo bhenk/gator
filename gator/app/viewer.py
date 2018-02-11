@@ -7,7 +7,7 @@ import exifread
 from PyQt5.QtCore import Qt, pyqtSignal, QEvent
 from PyQt5.QtGui import QPixmap, QKeyEvent, QCloseEvent, QMouseEvent, QFont
 from PyQt5.QtWidgets import QLabel, QApplication, QWidget, QVBoxLayout, QCheckBox, QGridLayout, QPushButton, \
-    QHBoxLayout, QLayout, QMenu, QAction, QFrame, QMessageBox
+    QHBoxLayout, QLayout, QMenu, QAction, QFrame, QMessageBox, QComboBox
 
 from app.style import Style
 from app.widgets import BrowserWindow
@@ -111,16 +111,17 @@ class Viewer(QLabel):
 
     def connect_signals(self):
         self.ctrl.sgn_main_window_closing.connect(self.on_main_window_closing)
-        self.ctrl.sgn_switch_resources.connect(self.on_sgn_switch_resources)
+        self.ctrl.sgn_switch_universe.connect(self.on_sgn_switch_universe)
 
-    def on_sgn_switch_resources(self):
-        LOG.debug("sgn_switch_resources received")
-        self.navigator = Navigator(self.ctrl.store, self.ctrl.resources)
+    def on_sgn_switch_universe(self):
+        LOG.debug("sgn_switch_universe received")
+        self.navigator = Navigator(self.ctrl.store, self.ctrl.universe)
 
     def resizeEvent(self, event):
         pixmap = self.pixmap.scaled(event.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.setPixmap(pixmap)
         self.resize(pixmap.size())
+        self.view_control.on_viewer_resize_event()
 
     def set_resource(self, resource: Resource):
         pixmap = QPixmap(resource.filename())
@@ -260,6 +261,10 @@ class Viewer(QLabel):
     def go_file_history_end(self):
         self.set_resource(self.navigator.go_history_end())
 
+    def on_pilot_changed(self, index):
+        self.navigator.set_pilot(pilot_index=index)
+        self.set_resource(self.navigator.current_resource())
+
     def toggle_scale_screen_size(self, checked):
         self.scale_screen_size = checked
         self.set_resource(self.current_resource)
@@ -331,6 +336,7 @@ class ViewControl(QWidget):
         vbl_0 = QVBoxLayout(self)
         vbl_0.setContentsMargins(10, 5, 0, 5)  # left, top, right, bottom
         vbl_0.setSizeConstraint(QLayout.SetFixedSize)
+        vbl_0.setSpacing(5)
 
         self.lbl_current_resource = QLabel()
         self.lbl_current_resource.setMaximumWidth(self.max_width)
@@ -354,34 +360,55 @@ class ViewControl(QWidget):
         self.lbl_view_dates.setWordWrap(True)
         vbl_0.addWidget(self.lbl_view_dates)
 
-        # Navigator items
-        navigator_line = QFrame()
-        navigator_line.setFrameShape(QFrame.HLine)
-        navigator_line.setFrameShadow(QFrame.Sunken)
-        vbl_0.addWidget(navigator_line)
+        # Stat view ###################################
+        stat_line = QFrame()
+        stat_line.setFrameShape(QFrame.HLine)
+        stat_line.setFrameShadow(QFrame.Sunken)
+        vbl_0.addWidget(stat_line)
 
         self.stat_view_views = StatView(parent=self, title="View stats", decimals=4)
         self.stat_view_views.setMaximumSize(self.max_width, 155)
         vbl_0.addWidget(self.stat_view_views)
 
-        # Navigate
-        navigate_line = QFrame()
-        navigate_line.setFrameShape(QFrame.HLine)
-        navigate_line.setFrameShadow(QFrame.Sunken)
-        vbl_0.addWidget(navigate_line)
+        # Scale #######################################
+        scale_line = QFrame()
+        scale_line.setFrameShape(QFrame.HLine)
+        scale_line.setFrameShadow(QFrame.Sunken)
+        vbl_0.addWidget(scale_line)
+
+        self.scale_title = QLabel()
+        self.scale_title.setStyleSheet("font-weight: bold;")
+        self.scale_title.setText("Size")
+        vbl_0.addWidget(self.scale_title)
 
         self.toggle_scale_screen_size = QCheckBox("scale screen size")
         self.toggle_scale_screen_size.setChecked(self.viewer.scale_screen_size)
         self.toggle_scale_screen_size.toggled.connect(self.viewer.toggle_scale_screen_size)
         vbl_0.addWidget(self.toggle_scale_screen_size)
 
-        self.toggle_max_height = QCheckBox("fixed max height", self)
+        self.toggle_max_height = QCheckBox("fix max height", self)
         self.toggle_max_height.toggled.connect(self.on_toggle_max_height)
         vbl_0.addWidget(self.toggle_max_height)
 
-        self.toggle_max_width = QCheckBox("fixed max width", self)
+        self.toggle_max_width = QCheckBox("fix max width", self)
         self.toggle_max_width.toggled.connect(self.on_toggle_max_width)
         vbl_0.addWidget(self.toggle_max_width)
+
+        # Navigate ####################################
+        navigate_line = QFrame()
+        navigate_line.setFrameShape(QFrame.HLine)
+        navigate_line.setFrameShadow(QFrame.Sunken)
+        vbl_0.addWidget(navigate_line)
+
+        self.nav_title = QLabel()
+        self.nav_title.setStyleSheet("font-weight: bold;")
+        self.nav_title.setText("Navigate")
+        vbl_0.addWidget(self.nav_title)
+
+        self.combo_pilot = QComboBox(self)
+        self.combo_pilot.addItems(Navigator.PILOTS)
+        self.combo_pilot.currentIndexChanged.connect(self.viewer.on_pilot_changed)
+        vbl_0.addWidget(self.combo_pilot)
 
         grid = QGridLayout()
         grid.setSpacing(0)
@@ -454,23 +481,32 @@ class ViewControl(QWidget):
 
         self.lbl_view_dates.setText("\n".join(self.viewer.current_resource.view_dates(fmt=Format.DATE_FULL)))
 
-        stat = self.viewer.navigator.stat_view_count()
+        stat = self.viewer.navigator.stat()
         self.stat_view_views.set_stat(stat)
 
-        self.btn_history_index.setText(str(self.viewer.current_resource.history_index()))
+        self.nav_title.setText("Navigate %d x %d" % self.viewer.navigator.space()[0:2])
+
+        self.btn_history_index.setText(str(self.viewer.navigator.index_x()))
         self.btn_history_index.setEnabled(not self.viewer.navigator.is_at_start())
         self.toggle_max_height.setChecked(self.viewer.maximumHeight() != MAX_SIZE)
         self.toggle_max_width.setChecked(self.viewer.maximumWidth() != MAX_SIZE)
 
     def on_toggle_max_width(self, checked):
         self.viewer.toggle_max_width(checked)
+        text = ("fixed max width %s" % str(self.viewer.width()) if checked else "fix max width")
+        self.toggle_max_width.setText(text)
         self.toggle_scale_screen_size.setEnabled(
             not (self.toggle_max_height.isChecked() or self.toggle_max_width.isChecked()))
 
     def on_toggle_max_height(self, checked):
         self.viewer.toggle_max_height(checked)
+        text = ("fixed max height %s" % str(self.viewer.height()) if checked else "fix max height")
+        self.toggle_max_height.setText(text)
         self.toggle_scale_screen_size.setEnabled(
             not (self.toggle_max_height.isChecked() or self.toggle_max_width.isChecked()))
+
+    def on_viewer_resize_event(self):
+        self.scale_title.setText("Size %d x %d" % (self.viewer.height(), self.viewer.width()))
 
     def closeEvent(self, event: QCloseEvent):
         LOG.debug("Close event on Viewer Control")

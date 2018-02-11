@@ -85,7 +85,7 @@ class DateStore(object):
         latest = self.bdb.get_keys_with_latest_values(threshold)
         return sorted(latest.items(), key=operator.itemgetter(1))
 
-    def history_keys(self, threshold) -> []:
+    def history_keys(self, threshold=0) -> []:
         return [item[0] for item in self.history_items(threshold)]
 
 

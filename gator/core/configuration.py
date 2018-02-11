@@ -261,11 +261,11 @@ class GatorConf(Configuration):
     def set_log_file(self, log_file):
         self.__set_option__(GatorConf.SECTION_CORE, "log_file", log_file)
 
-    def resources(self, fallback=list()):
-        return self.__get_list__(GatorConf.SECTION_CORE, "resources", fallback)
+    def universe_list(self, fallback=list()):
+        return self.__get_list__(GatorConf.SECTION_CORE, "universe_list", fallback)
 
-    def set_resources(self, resources: list):
-        self.__set_list__(GatorConf.SECTION_CORE, "resources", resources)
+    def set_universe_list(self, path_list: list):
+        self.__set_list__(GatorConf.SECTION_CORE, "universe_list", path_list)
 
     #####################################################
     # SECTION_WINDOW

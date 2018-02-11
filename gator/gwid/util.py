@@ -72,7 +72,7 @@ class GIcon(object):
     def configuration(): return icon("wrench.png")
 
     @staticmethod
-    def resources(): return icon("open-folder.png")
+    def universe(): return icon("open-folder.png")
 
     @staticmethod
     def viewer(): return icon("open-eye-black.png")

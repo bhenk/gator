@@ -13,7 +13,7 @@ from bdbs.obj import Resource
 from bdbs.store import Store
 from core import services
 from core.configuration import GatorConf, PathFinder
-from core.navigator import Resources
+from core.navigator import Universe
 
 LOG = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ class Ctrl(QObject):
 
     sgn_main_window_closing = pyqtSignal()
     sgn_switch_configuration = pyqtSignal()
-    sgn_switch_resources = pyqtSignal()
+    sgn_switch_universe = pyqtSignal()
     sgn_resource_changed = pyqtSignal(Resource)
 
     def __init__(self, gator_config: GatorConf):
@@ -35,8 +35,8 @@ class Ctrl(QObject):
         LOG.info("Configuration: %s" % self.configuration_file)
         LOG.info("Gator Home   : %s" % self.gator_home)
 
-        self.resources = Resources(self.config.resources())
-        LOG.info(self.resources.to_string())
+        self.universe = Universe(self.config.universe_list())
+        LOG.info(self.universe.to_string())
         db_home = os.path.join(self.gator_home, "db")
         self.store = Store(db_home)
         LOG.info("Gator store  : %s" % self.store.repository.db_home())
@@ -134,12 +134,12 @@ class Ctrl(QObject):
         LOG.info("Switched configuration : %s" % self.configuration_file)
         LOG.info("Gator Home             : %s" % self.gator_home)
         LOG.info("Gator store            : %s" % self.store.repository.db_home())
-        self.switch_resources()
+        self.switch_universe()
 
-    def switch_resources(self):
-        self.resources = Resources(self.config.resources())
-        LOG.info(self.resources.to_string())
-        self.sgn_switch_resources.emit()
+    def switch_universe(self):
+        self.universe = Universe(self.config.universe_list())
+        LOG.info(self.universe.to_string())
+        self.sgn_switch_universe.emit()
 
     def set_last_viewer(self, viewer):
         self.last_viewer = viewer

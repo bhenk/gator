@@ -24,10 +24,9 @@ class Resource(object):
     def is_slv_index(string):
         return re.search(Resource.SLV_INDEX_PATTERN, string)
 
-    def __init__(self, filename=None, index=-1, history_index=-1):
+    def __init__(self, filename=None, index=-1):
         self.__filename = filename
         self.__index = index
-        self.__history_index = history_index
         self.__view_dates = list()
         self.__acme_dates = list()
 
@@ -36,9 +35,6 @@ class Resource(object):
 
     def index(self):
         return self.__index
-
-    def history_index(self):
-        return self.__history_index
 
     def has_file(self):
         return self.__filename is not None

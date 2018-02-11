@@ -3,9 +3,7 @@
 import logging
 import sys
 import unittest
-from datetime import datetime
 
-from bdbs.env import Repository
 from bdbs.store import Store
 
 

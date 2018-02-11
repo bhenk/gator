@@ -35,14 +35,15 @@ class Format(object):
 class Stat(object):
 
     def __init__(self, sequence):
-        self.__sequence = [0] if len(sequence) == 0 else sequence
+        self.__sequence = sequence
         self.__len_seq = len(self.__sequence)
-        self.__min = min(self.__sequence)
+        empty = self.__len_seq == 0
+        self.__min = 0 if empty else min(self.__sequence)
         self.__len_min = len([x for x in self.__sequence if x == self.__min])
-        self.__max = max(self.__sequence)
+        self.__max = 0 if empty else max(self.__sequence)
         self.__len_max = len([x for x in self.__sequence if x == self.__max])
-        self.__mean = mean(self.__sequence)
-        self.__median = median(self.__sequence)
+        self.__mean = 0 if empty else mean(self.__sequence)
+        self.__median = 0 if empty else median(self.__sequence)
         self.__stdev = -1 if len(self.__sequence) < 2 else stdev(self.__sequence)
 
     def len_seq(self):
