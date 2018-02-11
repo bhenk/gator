@@ -93,3 +93,4 @@ ENV/
 
 /gator/bdbs/test/store_test/
 /gator/bdbs/test/test_db/
+/gator/core/test/navigator_test
