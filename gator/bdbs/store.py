@@ -145,8 +145,8 @@ class Store(object):
 
     def replicate(self):
         rep_dir = self._replication_dir()
-        for name in self.store_names:
-            self._replicate_bdb(self.view_date_store().bdb, rep_dir, name + ".csv")
+        self._replicate_bdb(self.view_date_store().bdb, rep_dir, "viewdatestore.csv")
+        self._replicate_bdb(self.acme_date_store().bdb, rep_dir, "acmedatestore.csv")
         self._cleanup(rep_dir)
 
     def _replication_dir(self):

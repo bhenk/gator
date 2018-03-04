@@ -8,7 +8,7 @@ from bsddb3.dbobj import DB, DBEnv
 
 LOG = logging.getLogger(__name__)
 
-LIST_SEP = "\0"
+LIST_SEP = "|"
 
 
 class BDB(DB):

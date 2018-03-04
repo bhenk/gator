@@ -316,10 +316,8 @@ class AcmePilot(Pilot):
     def go_left(self):
         filename_acme = self.__acme_list[self.__acme_index]
         idx = self._universe.index(filename_acme) - 1
-        print("start universe index", idx)
 
         for filename in self._universe.filename_list()[idx::-1]:
-            print(self._universe.index(filename), filename)
             if filename in self.__acme_list:
                 self.__acme_index = self.__acme_list.index(filename)
                 break
