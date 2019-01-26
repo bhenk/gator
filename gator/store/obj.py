@@ -65,20 +65,26 @@ class Resource(object):
             display = self.__filename
         return "<a href=\"file://%s\">%s</a>" % (self.__filename, display)
 
-    def set_view_dates(self, view_dates: list()):
+    def set_view_dates(self, view_dates: []):
         self.__view_dates = view_dates
 
     def view_dates(self, fmt=None):
         return self.dates_formatted( self.__view_dates, fmt)
 
+    def add_view_date(self, view_date):
+        self.__view_dates.append(view_date)
+
     def count_view_dates(self):
         return len(self.__view_dates)
 
-    def set_acme_dates(self, acme_dates: list()):
+    def set_acme_dates(self, acme_dates: []):
         self.__acme_dates = acme_dates
 
     def acme_dates(self, fmt=None):
         return self.dates_formatted(self.__acme_dates, fmt)
+
+    def add_acme_date(self, acme_date):
+        self.__acme_dates.append(acme_date)
 
     def count_acme_dates(self):
         return len(self.__acme_dates)

@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QLabel, QApplication, QWidget, QVBoxLayout, QCheckBo
 
 from app.style import Style
 from app.widgets import BrowserWindow
-from bdbs.obj import Resource
+from store.obj import Resource
 from core.navigator import Navigator
 from core.services import Format
 from gwid.gwidget import StatView
@@ -29,6 +29,7 @@ class Viewer(QLabel):
 
     def __init__(self, parent, navigator):
         QLabel.__init__(self)
+        self.initialized = False
         self.parent = parent
         self.navigator = navigator  # type: Navigator
         self.setAttribute(Qt.WA_DeleteOnClose, True)
@@ -107,6 +108,7 @@ class Viewer(QLabel):
         self.set_resource(self.navigator.current_resource())
         self.view_control = ViewControl(self)
         self.popup = ViewerPopup(self)
+        self.initialized = True
         self.show()
 
     def connect_signals(self):
@@ -183,21 +185,22 @@ class Viewer(QLabel):
         return QWidget.event(self, event)
 
     def set_menu_actions(self):
-        if not self.menu_actions_set and (self.view_control.isActiveWindow() or self.isActiveWindow()):
-            self.action_activate_me.setChecked(True)
-            self.action_close_me.setChecked(True)
-            self.menu_edit.insertAction(self.menu_edit.actions()[0], self.action_copy_pixmap)
-            self.menu_edit.insertAction(self.menu_edit.actions()[0], self.action_copy_filename)
-            self.menu_edit.insertAction(self.menu_edit.actions()[0], self.action_acme_me)
-            self.menu_navigate.addAction(self.action_go_history_start)
-            self.menu_navigate.addAction(self.action_go_start)
-            self.menu_navigate.addAction(self.action_go_history_end)
-            self.menu_navigate.addSeparator()
-            self.menu_navigate.addAction(self.action_go_up)
-            self.menu_navigate.addAction(self.action_go_left)
-            self.menu_navigate.addAction(self.action_go_right)
-            self.menu_navigate.addAction(self.action_go_down)
-            self.menu_actions_set = True
+        if self.initialized:
+            if not self.menu_actions_set and (self.view_control.isActiveWindow() or self.isActiveWindow()):
+                self.action_activate_me.setChecked(True)
+                self.action_close_me.setChecked(True)
+                self.menu_edit.insertAction(self.menu_edit.actions()[0], self.action_copy_pixmap)
+                self.menu_edit.insertAction(self.menu_edit.actions()[0], self.action_copy_filename)
+                self.menu_edit.insertAction(self.menu_edit.actions()[0], self.action_acme_me)
+                self.menu_navigate.addAction(self.action_go_history_start)
+                self.menu_navigate.addAction(self.action_go_start)
+                self.menu_navigate.addAction(self.action_go_history_end)
+                self.menu_navigate.addSeparator()
+                self.menu_navigate.addAction(self.action_go_up)
+                self.menu_navigate.addAction(self.action_go_left)
+                self.menu_navigate.addAction(self.action_go_right)
+                self.menu_navigate.addAction(self.action_go_down)
+                self.menu_actions_set = True
 
     def reset_menu_actions(self):
         if self.menu_actions_set and not (self.view_control.isActiveWindow() or self.isActiveWindow()):

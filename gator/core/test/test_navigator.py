@@ -6,7 +6,7 @@ import shutil
 import sys
 import unittest
 
-from bdbs.store import Store
+from store.store import Store
 from core.navigator import Universe, DefaultPilot, Navigator
 
 
@@ -75,7 +75,9 @@ class TestNavigator(unittest.TestCase):
     def test_navigator(self):
         navigator = Navigator(self.store, self.universe)
 
-        print(navigator.pilots["default"](self.store, self.universe))
+        print(navigator.pilots["Default"])
+
+        #print(navigator.pilots["Default"](self.store, self.universe))
 
 
 

@@ -4,8 +4,8 @@ import logging
 import os
 import random
 
-from bdbs.obj import Resource
-from bdbs.store import Store
+from store.obj import Resource
+from store.store import Store
 from core.services import Format, Stat
 
 LOG = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ class Universe(object):
     def filter_list():
         return "Images(*%s)" % " *".join(EXTENSIONS)
 
-    def __init__(self, path_list=list()):
+    def __init__(self, path_list=[]):
         self.__path_list = path_list
         self.__filename_list = list()
         self.__folder_list = list()

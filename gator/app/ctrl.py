@@ -9,8 +9,8 @@ from PyQt5.QtWidgets import QMessageBox, QMenu, QMenuBar
 
 import gwid.logs
 from app.menu import GMenuBar
-from bdbs.obj import Resource
-from bdbs.store import Store
+from store.obj import Resource
+from store.store import Store
 from core import services
 from core.configuration import GatorConf, PathFinder
 from core.navigator import Universe
@@ -39,7 +39,7 @@ class Ctrl(QObject):
         LOG.info(self.universe.to_string())
         db_home = os.path.join(self.gator_home, "db")
         self.store = Store(db_home)
-        LOG.info("Gator store  : %s" % self.store.repository.db_home())
+        LOG.info("Gator store  : %s" % self.store.store_home)
 
         self.last_viewer = None
         self.is_closing = False
@@ -133,7 +133,7 @@ class Ctrl(QObject):
         self.sgn_switch_configuration.emit()
         LOG.info("Switched configuration : %s" % self.configuration_file)
         LOG.info("Gator Home             : %s" % self.gator_home)
-        LOG.info("Gator store            : %s" % self.store.repository.db_home())
+        LOG.info("Gator store            : %s" % self.store.store_home)
         self.switch_universe()
 
     def switch_universe(self):

@@ -3,7 +3,7 @@
 import unittest
 from datetime import datetime
 
-from bdbs.obj import Resource
+from store.obj import Resource
 
 
 class TestResource(unittest.TestCase):

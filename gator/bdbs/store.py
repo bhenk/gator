@@ -11,7 +11,7 @@ from datetime import datetime
 
 from bdbs import env
 from bdbs.env import BDB, Repository
-from bdbs.obj import Resource
+from store.obj import Resource
 from core.services import NlDialect
 
 LOG = logging.getLogger(__name__)
@@ -108,6 +108,9 @@ class ViewDateStore(DateStore):
 
 
 class Store(object):
+    """
+    Store and factory for x_store objects. A store can replicate itself.
+    """
 
     def __init__(self, db_home):
         self.repository = Repository(db_home)

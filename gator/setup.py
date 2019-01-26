@@ -26,10 +26,11 @@ setup(
     name='Gator',
     version=version.__version__,
     py_modules=['version'],
-    packages=['app', 'bdbs', 'core', 'gwid'],
+    packages=['app', 'bdbs', 'core', 'gwid', 'store'],
     url='https://anhenet.nl',
     license='Apache License 2.0',
     author='gendan vehnberk',
     description='Application for viewing and maintaining images',
-    install_requires=['pyqt5', 'exifread', 'bsddb3']
+    # install_requires=['pyqt5', 'exifread', 'bsddb3']
+    install_requires=['pyqt5', 'exifread', 'pandas']
 )

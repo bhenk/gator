@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QFrame, QApplication, QVBoxLayout, QLabel, QComboBox
 
 from app.style import Style
 from app.viewer import Viewer
-from bdbs.obj import Resource
+from store.obj import Resource
 from core.configuration import PathFinder, GatorConf
 from core.navigator import Universe, Navigator
 from core.services import Format

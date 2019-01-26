@@ -20,5 +20,7 @@
 
 pyqt5
 exifread
-bsddb3>=6.2.3
+# provisional, only when using berkeley
+# bsddb3>=6.2.3
+pandas
 -e .
