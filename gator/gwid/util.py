@@ -2,15 +2,17 @@
 # -*- coding: utf-8 -*-
 import logging
 import os
+import core.services as serv
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QKeyEvent
 from PyQt5.QtWidgets import qApp, QApplication
 
 LOG = logging.getLogger(__name__)
-ROOT = os.path.dirname(os.path.abspath(__name__)) if os.path.exists(
-    os.path.join(os.path.dirname(os.path.abspath(__name__)), "img")) else os.path.dirname(
-    os.path.dirname(os.path.abspath(__name__)))
+# ROOT = os.path.dirname(os.path.abspath(__name__)) if os.path.exists(
+#     os.path.join(os.path.dirname(os.path.abspath(__name__)), "img")) else os.path.dirname(
+#     os.path.dirname(os.path.abspath(__name__)))
+ROOT = serv.application_home()
 LOG.info("ROOT: %s" % ROOT)
 
 

@@ -94,3 +94,9 @@ ENV/
 /gator/bdbs/test/store_test/
 /gator/bdbs/test/test_db/
 /gator/core/test/navigator_test
+/gator/z_dist/
+/gator/z_build/mac-os/installer/packages/bhenk.gator/data/
+/gator/z_build/mac-os/dist_installer/
+
+# mac-os
+*.DS_Store

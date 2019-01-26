@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <DisplayName>Gator</DisplayName>
+    <Description>Gator is an image viewer</Description>
+    <Version>2.0.0</Version>
+    <ReleaseDate>2019-01-26</ReleaseDate>
+    <Licenses>
+        <License name="Apache 2.0" file="LICENSE" />
+    </Licenses>
+    <Default>true</Default>
+    <UserInterfaces>
+        <UserInterface>page.ui</UserInterface>
+    </UserInterfaces>
+</Package>
